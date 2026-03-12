@@ -145,9 +145,9 @@ export default function CheckoutPage() {
 
   return (
     <>
-      <Script
+           <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
         onLoad={() => { razorpayReady.current = true; }}
       />
 
