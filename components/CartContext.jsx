@@ -4,7 +4,17 @@ import { createContext, useContext, useState } from "react";
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = localStorage.getItem("cart");
+    return saved ? JSON.parse(saved) : [];
+  } catch { return []; }
+});
+
+  useEffect(() => {
+  localStorage.setItem("cart", JSON.stringify(items));
+}, [items]);
 
   function addItem(product) {
     setItems((prev) => {
