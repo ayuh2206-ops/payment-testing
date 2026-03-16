@@ -1,8 +1,6 @@
 // pages/api/create-order.js
-// Server-side order creation — amount is authoritative here, never trusted from client.
-// §2.19 — All order details logged server-side for 10-year record retention requirement.
-
-import Razorpay from "razorpay";
+import Razorpay from 'razorpay';
+import { getDb } from '@/lib/db';
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -10,47 +8,43 @@ const razorpay = new Razorpay({
 });
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { amount, currency = "INR", receipt, customerName, customerEmail, customerPhone } = req.body;
+  const { amount, currency = 'INR', customerName, customerEmail, customerPhone, items } = req.body;
+  if (!amount || amount <= 0) return res.status(400).json({ error: 'Invalid amount' });
 
-  if (!amount || amount <= 0) {
-    return res.status(400).json({ error: "Invalid amount" });
-  }
-
-  // Server enforces amount in paise — client cannot manipulate price
   const amountInPaise = Math.round(amount * 100);
+  const orderRef = `ORD-${Date.now()}`;
 
   try {
-    const order = await razorpay.orders.create({
+    const rzpOrder = await razorpay.orders.create({
       amount: amountInPaise,
       currency,
-      receipt: receipt || `rcpt_${Date.now()}`,
-      notes: {
-        // §2.19 — Store customer info server-side for audit trail
-        customerName: customerName || "",
-        customerEmail: customerEmail || "",
-        customerPhone: customerPhone || "",
-        createdAt: new Date().toISOString(),
-      },
+      receipt: orderRef,
+      notes: { customerName, customerEmail, customerPhone },
     });
 
-    // §2.19 — Log for 10-year record retention (add DB write in production)
-    console.log("Order created:", {
-      orderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
-      customerEmail,
-      timestamp: new Date().toISOString(),
-    });
+    // Save pending order to DB
+    const sql = getDb();
+    await sql`
+      INSERT INTO orders (order_ref, customer_name, customer_email, customer_phone, razorpay_order_id, amount, status)
+      VALUES (${orderRef}, ${customerName || 'Guest'}, ${customerEmail || ''}, ${customerPhone || ''}, ${rzpOrder.id}, ${amount}, 'pending')
+      ON CONFLICT (order_ref) DO NOTHING
+    `;
 
-    return res.status(200).json({
-      orderId: order.id,
-      amount: order.amount,
-      currency: order.currency,
-    });
+    // Save order items
+    if (items && items.length > 0) {
+      for (const item of items) {
+        await sql`
+          INSERT INTO order_items (order_ref, product_id, product_name, product_sku, quantity, unit_price)
+          VALUES (${orderRef}, ${item.id}, ${item.name}, ${item.sku || ''}, ${item.qty}, ${item.price})
+        `;
+      }
+    }
+
+    return res.status(200).json({ orderId: rzpOrder.id, orderRef, amount: rzpOrder.amount, currency: rzpOrder.currency });
   } catch (err) {
-    console.error("Razorpay order creation failed:", err);
-    return res.status(500).json({ error: "Failed to create order" });
+    console.error('create-order error:', err);
+    return res.status(500).json({ error: 'Failed to create order' });
   }
 }
