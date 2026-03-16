@@ -1,44 +1,69 @@
 // pages/api/verify-payment.js
-// STEP 2: Cryptographically verifies the payment signature.
-// Without this check, a hacker could fake a successful payment.
+// Critical security step: server verifies Razorpay signature before fulfilling order.
+// §2.19 — Full transaction record logged here for 10-year retention requirement.
+// §6.1(iii)(iv) — We receive payment IDs only, NEVER card data or payment credentials.
 
 import crypto from "crypto";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+  const {
+    razorpay_payment_id,
+    razorpay_order_id,
+    razorpay_signature,
+    customer,
+    items,
+    amount,
+  } = req.body;
 
-  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-    return res.status(400).json({ success: false, error: "Missing verification fields." });
+  if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
+    return res.status(400).json({ error: "Missing payment verification parameters" });
   }
 
-  try {
-    const expected = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest("hex");
+  // Verify HMAC-SHA256 signature — proves payment came from Razorpay, not tampered
+  const body = `${razorpay_order_id}|${razorpay_payment_id}`;
+  const expectedSignature = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(body)
+    .digest("hex");
 
-    if (expected !== razorpay_signature) {
-      console.warn("[verify-payment] Signature MISMATCH", { razorpay_order_id });
-      return res.status(400).json({ success: false, error: "Signature verification failed." });
-    }
-
-    // ✅ Payment is genuine — mark order as PAID in your database here:
-    //
-    //   await db.orders.update({
-    //     where: { razorpay_order_id },
-    //     data: { status: "PAID", razorpay_payment_id, paid_at: new Date() },
-    //   });
-
-    console.log("[verify-payment] ✅ Verified:", razorpay_payment_id);
-    return res.status(200).json({
-      success:    true,
-      payment_id: razorpay_payment_id,
-      order_id:   razorpay_order_id,
+  if (expectedSignature !== razorpay_signature) {
+    console.error("Payment signature mismatch — possible tampering:", {
+      orderId: razorpay_order_id,
+      paymentId: razorpay_payment_id,
+      timestamp: new Date().toISOString(),
     });
-  } catch (err) {
-    console.error("[verify-payment]", err);
-    return res.status(500).json({ success: false, error: "Server error during verification." });
+    return res.status(400).json({ error: "Payment verification failed — invalid signature" });
   }
+
+  // §2.19 — Log complete transaction record for 10-year audit requirement
+  // In production: INSERT this into your database transactions table
+  const transactionRecord = {
+    paymentId: razorpay_payment_id,
+    orderId: razorpay_order_id,
+    amount,
+    currency: "INR",
+    status: "verified",
+    customerName: customer?.name,
+    customerEmail: customer?.email,
+    customerPhone: customer?.phone,
+    items: JSON.stringify(items),
+    verifiedAt: new Date().toISOString(),
+    // §6.1(iii)(iv) — Note: NO card data, CVV, or UPI PIN stored here.
+    // Only the cryptographic payment IDs issued by Razorpay are stored.
+  };
+
+  console.log("=== PAYMENT VERIFIED & RECORDED ===", transactionRecord);
+
+  // TODO in production:
+  // 1. await db.transactions.insert(transactionRecord)
+  // 2. await sendOrderConfirmationEmail(customer.email, transactionRecord)
+  // 3. await updateInventory(items)
+
+  return res.status(200).json({
+    success: true,
+    paymentId: razorpay_payment_id,
+    message: "Payment verified successfully",
+  });
 }
