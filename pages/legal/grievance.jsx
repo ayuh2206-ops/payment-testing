@@ -149,8 +149,8 @@ export default function GrievancePage() {
 
       <style jsx>{`
         .grievance-form {
-          background: var(--surface);
-          border: 1px solid var(--border);
+          background: rgba(32,45,38,0.7);
+          border: 1px solid rgba(65,72,67,0.3);
           border-radius: 14px;
           padding: 28px;
           margin: 28px 0;
@@ -178,7 +178,7 @@ export default function GrievancePage() {
         .form-group select,
         .form-group textarea {
           background: var(--bg);
-          border: 1px solid var(--border);
+          border: 1px solid rgba(65,72,67,0.3);
           border-radius: 8px;
           padding: 10px 14px;
           color: var(--text);
@@ -190,11 +190,11 @@ export default function GrievancePage() {
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
-          border-color: var(--accent);
+          border-color: var(--gold);
         }
         .form-group select option { background: #1a1f2e; }
         .submit-btn {
-          background: var(--accent);
+          background: var(--gold);
           color: #000;
           border: none;
           border-radius: 10px;
@@ -215,7 +215,7 @@ export default function GrievancePage() {
         }
         .success-icon {
           width: 52px; height: 52px;
-          background: var(--accent);
+          background: var(--gold);
           color: #000;
           border-radius: 50%;
           display: flex; align-items: center; justify-content: center;
@@ -223,7 +223,7 @@ export default function GrievancePage() {
           margin: 0 auto 16px;
         }
         .success-card h3 {
-          font-family: 'Syne', sans-serif;
+          font-family: 'Noto Serif', serif;
           color: var(--text);
           margin-bottom: 10px;
         }

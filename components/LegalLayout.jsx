@@ -1,12 +1,12 @@
-// components/LegalLayout.jsx
-// Shared wrapper for all policy/legal pages
-import Link from "next/link";
+// components/LegalLayout.jsx — Botanical Glass
+import Link from 'next/link';
 
 export default function LegalLayout({ title, lastUpdated, children }) {
   return (
     <div className="legal-page">
+      <div className="ambient" />
       <div className="legal-wrap">
-        <div className="legal-breadcrumb">
+        <div className="breadcrumb">
           <Link href="/">← Back to Store</Link>
         </div>
         <div className="legal-header">
@@ -17,87 +17,27 @@ export default function LegalLayout({ title, lastUpdated, children }) {
       </div>
 
       <style jsx>{`
-        .legal-page {
-          position: relative; z-index: 1;
-          padding: 40px 20px 80px;
-          min-height: 100vh;
-        }
-        .legal-wrap {
-          max-width: 760px;
-          margin: 0 auto;
-        }
-        .legal-breadcrumb {
-          margin-bottom: 32px;
-          font-size: 13px;
-          color: var(--muted);
-        }
-        .legal-breadcrumb a:hover { color: var(--accent); }
-        .legal-header {
-          border-bottom: 1px solid var(--border);
-          padding-bottom: 24px;
-          margin-bottom: 36px;
-        }
-        .legal-header h1 {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(24px, 4vw, 36px);
-          font-weight: 800;
-          letter-spacing: -1px;
-          margin-bottom: 8px;
-        }
-        .legal-date {
-          font-size: 13px;
-          color: var(--muted);
-        }
-        .legal-body {
-          line-height: 1.8;
-          font-size: 14px;
-          color: #c8d0e0;
-        }
-        .legal-body h2 {
-          font-family: 'Syne', sans-serif;
-          font-size: 16px;
-          font-weight: 700;
-          color: var(--text);
-          margin: 32px 0 12px;
-          padding-left: 12px;
-          border-left: 3px solid var(--accent);
-        }
-        .legal-body h3 {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--text);
-          margin: 20px 0 8px;
-        }
-        .legal-body p { margin-bottom: 14px; }
-        .legal-body ul {
-          padding-left: 20px;
-          margin-bottom: 14px;
-        }
-        .legal-body ul li { margin-bottom: 6px; }
-        .legal-body a { color: var(--accent); text-decoration: underline; }
-        .legal-body .highlight-box {
-          background: rgba(0,229,176,0.06);
-          border: 1px solid rgba(0,229,176,0.2);
-          border-radius: 10px;
-          padding: 16px 20px;
-          margin: 20px 0;
-          font-size: 13px;
-          color: var(--muted);
-        }
-        .legal-body .highlight-box strong { color: var(--accent); }
-        .legal-body .contact-card {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 20px;
-          margin: 16px 0;
-        }
-        .legal-body .contact-card strong {
-          display: block;
-          color: var(--text);
-          font-family: 'Syne', sans-serif;
-          margin-bottom: 8px;
-        }
+        .legal-page { min-height:100vh; background:var(--bg); padding:40px 24px 80px; position:relative; z-index:1; }
+        .ambient { position:fixed; top:-10%; right:-5%; width:600px; height:600px; background:radial-gradient(circle,rgba(27,77,62,0.14) 0%,transparent 70%); pointer-events:none; z-index:0; }
+        .legal-wrap { max-width:760px; margin:0 auto; position:relative; z-index:1; }
+        .breadcrumb { margin-bottom:28px; font-size:12px; color:var(--text3); font-weight:600; letter-spacing:.04em; text-transform:uppercase; }
+        .breadcrumb a:hover { color:var(--gold); }
+        .legal-header { border-bottom:1px solid rgba(65,72,67,0.2); padding-bottom:24px; margin-bottom:36px; }
+        .legal-header h1 { font-family:'Noto Serif',serif; font-size:clamp(26px,5vw,40px); font-weight:300; font-style:italic; letter-spacing:-0.5px; margin-bottom:8px; }
+        .legal-date { font-size:12px; color:var(--text3); }
+        .legal-body { line-height:1.85; font-size:14px; color:var(--text2); }
+        :global(.legal-body h2) { font-family:'Noto Serif',serif; font-size:17px; font-weight:400; color:var(--text); margin:32px 0 12px; padding-left:14px; border-left:2px solid var(--gold); border-radius:0; }
+        :global(.legal-body h3) { font-size:14px; font-weight:600; color:var(--text); margin:20px 0 8px; }
+        :global(.legal-body p) { margin-bottom:14px; }
+        :global(.legal-body ul) { padding-left:20px; margin-bottom:14px; }
+        :global(.legal-body ul li) { margin-bottom:6px; }
+        :global(.legal-body a) { color:var(--teal); text-decoration:underline; text-underline-offset:2px; }
+        :global(.legal-body a:hover) { color:var(--gold); }
+        :global(.legal-body .highlight-box) { background:rgba(233,195,73,0.06); border:1px solid rgba(233,195,73,0.15); border-radius:14px; padding:16px 20px; margin:20px 0; font-size:13px; color:var(--text2); }
+        :global(.legal-body .highlight-box strong) { color:var(--gold); }
+        :global(.legal-body .contact-card) { background:rgba(42,56,49,0.5); border-radius:16px; padding:20px; margin:16px 0; box-shadow:inset 0 1px 1px rgba(65,72,67,0.25); }
+        :global(.legal-body .contact-card strong) { display:block; color:var(--text); font-family:'Noto Serif',serif; font-style:italic; margin-bottom:8px; }
+        :global(.legal-body code) { font-family:monospace; font-size:12px; background:rgba(65,72,67,0.3); padding:2px 6px; border-radius:4px; color:var(--teal); }
       `}</style>
     </div>
   );

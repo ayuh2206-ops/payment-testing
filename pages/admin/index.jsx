@@ -1,4 +1,4 @@
-// pages/admin/index.jsx — Admin login gate
+// pages/admin/index.jsx — Botanical Glass admin login
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
@@ -14,33 +14,24 @@ export default function AdminLogin() {
     setError(''); setLoading(true);
     try {
       const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ passkey }),
       });
-      if (res.ok) {
-        router.push('/admin/dashboard');
-      } else {
-        setError('Invalid passkey. Please try again.');
-      }
-    } catch {
-      setError('Connection error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+      if (res.ok) router.push('/admin/dashboard');
+      else setError('Invalid passkey. Please try again.');
+    } catch { setError('Connection error.'); }
+    finally { setLoading(false); }
   }
 
   return (
     <>
-      <Head><title>Admin Login — YourStore</title></Head>
+      <Head><title>Admin — YourStore</title></Head>
       <div className="page">
+        <div className="ambient1" /><div className="ambient2" />
         <div className="card">
-          <div className="logo">
-            <span className="logo-dot" />
-            YourStore
-          </div>
-          <h1>Admin Panel</h1>
-          <p className="sub">Enter your admin passkey to continue</p>
+          <div className="logo">YourStore</div>
+          <h1>Admin Access</h1>
+          <p className="sub">Enter your passkey to continue</p>
 
           <form onSubmit={handleLogin}>
             <div className="field">
@@ -49,101 +40,33 @@ export default function AdminLogin() {
                 type="password"
                 value={passkey}
                 onChange={e => setPasskey(e.target.value)}
-                placeholder="Enter passkey"
-                autoFocus
-                required
+                placeholder="••••••••"
+                className="input-minimal"
+                autoFocus required
               />
             </div>
-            {error && <p className="error">{error}</p>}
-            <button type="submit" className="btn" disabled={loading || !passkey}>
-              {loading ? 'Verifying…' : 'Access Admin Panel →'}
+            {error && <p className="err">{error}</p>}
+            <button type="submit" className="gold-btn" style={{ width:'100%', padding:'15px 0', marginTop:8 }} disabled={loading || !passkey}>
+              {loading ? 'Verifying…' : 'Access Dashboard'}
             </button>
           </form>
-
           <p className="back"><a href="/">← Back to store</a></p>
         </div>
 
         <style jsx>{`
-          .page {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background: var(--bg);
-          }
-          .card {
-            width: 100%;
-            max-width: 380px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 40px 36px;
-          }
-          .logo {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Syne', sans-serif;
-            font-size: 16px;
-            font-weight: 800;
-            color: var(--text);
-            margin-bottom: 28px;
-          }
-          .logo-dot {
-            width: 8px; height: 8px;
-            background: var(--accent);
-            border-radius: 50%;
-          }
-          h1 {
-            font-family: 'Syne', sans-serif;
-            font-size: 24px; font-weight: 800;
-            letter-spacing: -0.5px;
-            margin-bottom: 6px;
-          }
-          .sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
-          .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-          label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
-          input {
-            height: 44px;
-            padding: 0 14px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text);
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-            font-family: 'Inter', sans-serif;
-          }
-          input:focus { border-color: var(--accent); }
-          .error {
-            font-size: 12px;
-            color: var(--red);
-            margin-bottom: 12px;
-            padding: 8px 12px;
-            background: rgba(239,68,68,0.08);
-            border-radius: 8px;
-            border: 1px solid rgba(239,68,68,0.2);
-          }
-          .btn {
-            width: 100%;
-            height: 46px;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
-            cursor: pointer;
-            transition: opacity 0.15s;
-            margin-top: 4px;
-          }
-          .btn:hover:not(:disabled) { opacity: 0.88; }
-          .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-          .back { text-align: center; font-size: 13px; color: var(--text2); margin-top: 20px; }
-          .back a:hover { color: var(--accent2); }
+          .page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; position:relative; overflow:hidden; }
+          .ambient1 { position:fixed; top:-20%; right:-10%; width:600px; height:600px; background:radial-gradient(circle,rgba(27,77,62,0.2) 0%,transparent 70%); pointer-events:none; z-index:0; }
+          .ambient2 { position:fixed; bottom:-10%; left:-10%; width:400px; height:400px; background:radial-gradient(circle,rgba(233,195,73,0.07) 0%,transparent 70%); pointer-events:none; z-index:0; }
+          .card { width:100%; max-width:380px; background:rgba(42,56,49,0.55); backdrop-filter:blur(28px); border-radius:28px; padding:44px 40px; box-shadow:inset 0 1px 1px rgba(65,72,67,0.3),0 30px 60px rgba(5,17,11,0.5); position:relative; z-index:1; }
+          .logo { font-family:'Noto Serif',serif; font-size:20px; font-weight:300; font-style:italic; color:var(--gold); margin-bottom:28px; }
+          h1 { font-family:'Noto Serif',serif; font-size:26px; font-weight:300; letter-spacing:-0.5px; margin-bottom:8px; }
+          .sub { font-size:13px; color:var(--text2); margin-bottom:32px; }
+          .field { display:flex; flex-direction:column; gap:6px; margin-bottom:20px; }
+          label { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); }
+          .err { font-size:12px; color:var(--error); padding:10px 14px; background:rgba(255,180,171,0.1); border-radius:10px; margin-bottom:12px; }
+          .gold-btn:disabled { opacity:.4; cursor:not-allowed; transform:none !important; }
+          .back { text-align:center; font-size:12px; color:var(--text3); margin-top:24px; }
+          .back a:hover { color:var(--gold); }
         `}</style>
       </div>
     </>

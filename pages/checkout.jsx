@@ -1,501 +1,340 @@
-// pages/checkout.jsx
-//
-// COMPLIANCE MAP (Razorpay ToU):
-// §2.16  — Explicit customer consent checkbox before payment (BLOCKING — cannot pay without it)
-// §6.1(iii)(iv) — We NEVER store card/payment data; Razorpay handles it exclusively
-// §6.1(b) — Policy links shown in footer and in consent text
-// §2.19  — Payment ID logged server-side for 10-year record retention
-// §6.2   — Grievance link present in footer
-//
-import { useState, useEffect } from "react";
-import Script from "next/script";
-import { useRouter } from "next/router";
-import { useCart } from "@/components/CartContext";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import Head from "next/head";
+// pages/checkout.jsx — Botanical Glass design
+import { useState, useEffect } from 'react';
+import Script from 'next/script';
+import { useRouter } from 'next/router';
+import Head from 'next/head';
+import Link from 'next/link';
+import { useCart } from '@/components/CartContext';
 
 export default function Checkout() {
   const { items, clearCart } = useCart();
-  const router = useRouter();
-
-  const [form, setForm] = useState({ name: "", email: "", phone: "" });
-  const [errors, setErrors] = useState({});
+  const router               = useRouter();
+  const [form, setForm]      = useState({ name: '', email: '', phone: '' });
+  const [errors, setErrors]  = useState({});
   const [loading, setLoading] = useState(false);
+  const [consent, setConsent] = useState(false);
+  const [consentErr, setConsentErr] = useState(false);
 
-  // §2.16 — REQUIRED: Explicit informed consent before payment
-  // Must NOT be pre-checked. Must be an affirmative action by the customer.
-  const [consentGiven, setConsentGiven] = useState(false);
-  const [consentError, setConsentError] = useState(false);
+  const total      = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const gst        = Math.round(total * 0.18);
+  const shipping   = total >= 1999 ? 0 : 99;
+  const grandTotal = total + gst + shipping;
 
-  const total = items.reduce((s, i) => s + i.price * i.qty, 0);
-
-  // Redirect to home if cart is empty
-  useEffect(() => {
-    if (items.length === 0) router.replace("/");
-  }, [items]);
+  useEffect(() => { if (items.length === 0) router.replace('/'); }, [items]);
 
   function validate() {
     const e = {};
-    if (!form.name.trim()) e.name = "Name is required";
-    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = "Valid email required";
-    if (!form.phone.match(/^[6-9]\d{9}$/)) e.phone = "Valid 10-digit Indian mobile number required";
+    if (!form.name.trim())                          e.name  = 'Name is required';
+    if (!form.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) e.email = 'Valid email required';
+    if (!form.phone.match(/^[6-9]\d{9}$/))          e.phone = 'Valid 10-digit mobile number';
     setErrors(e);
-    return Object.keys(e).length === 0;
+    return !Object.keys(e).length;
   }
 
   async function handlePay() {
-    // Validate form
     if (!validate()) return;
-
-    // §2.16 — BLOCK payment if consent not given
-    if (!consentGiven) {
-      setConsentError(true);
-      document.getElementById("consent-section").scrollIntoView({ behavior: "smooth" });
-      return;
-    }
-    setConsentError(false);
-
-    if (!window.Razorpay) {
-      alert("Payment gateway not loaded. Please refresh and try again.");
-      return;
-    }
-
+    if (!consent) { setConsentErr(true); document.getElementById('consent-anchor')?.scrollIntoView({ behavior: 'smooth' }); return; }
+    setConsentErr(false);
+    if (!window.Razorpay) { alert('Payment gateway not loaded. Please refresh.'); return; }
     setLoading(true);
     try {
-      // Server sets amount — client cannot tamper with price
-      const orderRes = await fetch("/api/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: total,
-          currency: "INR",
-          receipt: `rcpt_${Date.now()}`,
-          // Pass customer info for Razorpay prefill
-          customerName: form.name,
-          customerEmail: form.email,
-          customerPhone: form.phone,
-        }),
+      const orderRes = await fetch('/api/create-order', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: total, currency: 'INR', customerName: form.name, customerEmail: form.email, customerPhone: form.phone, items }),
       });
+      if (!orderRes.ok) throw new Error('Order creation failed');
+      const { orderId, orderRef, amount, currency } = await orderRes.json();
 
-      if (!orderRes.ok) throw new Error("Failed to create order");
-      const { orderId, amount, currency } = await orderRes.json();
-
-      const options = {
+      const rzp = new window.Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount,
-        currency,
-        name: "[Your Business Name]",
-        description: `Order – ${items.length} item(s)`,
+        amount, currency,
+        name: 'YourStore',
+        description: `${items.length} item${items.length > 1 ? 's' : ''}`,
         order_id: orderId,
-        // §6.1(iii)(iv) — Razorpay Standard Checkout handles all card data
-        // We never receive or store card numbers, CVV, or UPI PINs
-        prefill: {
-          name: form.name,
-          email: form.email,
-          contact: `+91${form.phone}`,
-        },
-        config: {
-          display: {
-            blocks: {
-              banks: { name: "Pay via UPI / Cards / Wallets", instruments: [
-                { method: "upi" },
-                { method: "card" },
-                { method: "wallet" },
-                { method: "netbanking" },
-              ]},
-            },
-            sequence: ["block.banks"],
-            preferences: { show_default_blocks: false },
-          },
-        },
-        theme: { color: "#00E5B0" },
-        modal: {
-          ondismiss: () => setLoading(false),
-          escape: true,
-          animation: true,
-        },
-        handler: async function (response) {
-          // response contains: razorpay_payment_id, razorpay_order_id, razorpay_signature
-          // §2.19 — These IDs must be stored server-side for 10-year record retention
+        prefill: { name: form.name, email: form.email, contact: `+91${form.phone}` },
+        theme: { color: '#e9c349' },
+        modal: { ondismiss: () => setLoading(false) },
+        handler: async (response) => {
           try {
-            const verifyRes = await fetch("/api/verify-payment", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                // Pass customer info for server-side order record
-                customer: form,
-                items,
-                amount: total,
-              }),
+            const vRes = await fetch('/api/verify-payment', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...response, customer: form, items, amount: total }),
             });
-
-            if (!verifyRes.ok) throw new Error("Payment verification failed");
-            const { paymentId } = await verifyRes.json();
-
+            if (!vRes.ok) throw new Error('Verification failed');
+            const { paymentId } = await vRes.json();
             clearCart();
-            router.push(`/order-success?paymentId=${paymentId}&orderId=${orderId}`);
-          } catch (err) {
-            console.error("Verification error:", err);
-            alert("Payment received but verification failed. Please contact support with your Order ID: " + orderId);
+            router.push(`/order-success?paymentId=${paymentId}&orderId=${orderRef}`);
+          } catch {
+            alert('Payment received but verification failed. Contact support with Order ID: ' + orderId);
             setLoading(false);
           }
         },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on("payment.failed", function (response) {
-        console.error("Payment failed:", response.error);
-        alert(`Payment failed: ${response.error.description}. Please try again.`);
-        setLoading(false);
       });
+      rzp.on('payment.failed', (r) => { alert(`Payment failed: ${r.error.description}`); setLoading(false); });
       rzp.open();
     } catch (err) {
-      console.error("Checkout error:", err);
-      alert("Something went wrong. Please try again.");
+      alert('Something went wrong. Please try again.');
       setLoading(false);
     }
   }
 
-  if (items.length === 0) return null;
+  if (!items.length) return null;
 
   return (
     <>
-      <Head>
-        <title>Checkout | YourStore</title>
-      </Head>
+      <Head><title>Checkout — YourStore</title></Head>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
 
-      {/* §checkout timing fix — load after interactive, not lazyOnload */}
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="afterInteractive"
-      />
+      <div className="page">
+        <div className="ambient1" /><div className="ambient2" />
 
-      <div className="page-wrap">
-        <Navbar />
+        {/* Nav */}
+        <header className="chead">
+          <Link href="/" className="logo">YourStore</Link>
+          <div className="steps">
+            <span className="step active">
+              <span className="step-n">1</span> Details
+            </span>
+            <span className="step-line" />
+            <span className="step">
+              <span className="step-n">2</span> Payment
+            </span>
+            <span className="step-line" />
+            <span className="step">
+              <span className="step-n">3</span> Confirm
+            </span>
+          </div>
+        </header>
 
-        <main className="checkout-page">
-          <div className="checkout-container">
+        <main className="main">
+          <div className="grid">
 
-            {/* ── LEFT: Customer Details ── */}
-            <div className="checkout-left">
-              <h2 className="section-title">Delivery Details</h2>
-
-              <div className="form-group">
-                <label>Full Name *</label>
-                <input
-                  value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="As on your ID"
-                  className={errors.name ? "error" : ""}
-                />
-                {errors.name && <span className="err">{errors.name}</span>}
+            {/* ── Left: Form ── */}
+            <div className="left">
+              <div className="section-label">
+                <span className="section-num">1</span>
+                <h2>Delivery Details</h2>
               </div>
 
-              <div className="form-group">
-                <label>Email Address *</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                  placeholder="For order confirmation"
-                  className={errors.email ? "error" : ""}
-                />
-                {errors.email && <span className="err">{errors.email}</span>}
-              </div>
-
-              <div className="form-group">
-                <label>Mobile Number * <small>(10 digits, no country code)</small></label>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))}
-                  placeholder="9XXXXXXXXX"
-                  className={errors.phone ? "error" : ""}
-                />
-                {errors.phone && <span className="err">{errors.phone}</span>}
-              </div>
-
-              {/* ─────────────────────────────────────────────────────────
-                  COMPLIANCE SECTION — Razorpay ToU §2.16
-                  Explicit informed consent REQUIRED before payment.
-                  Cannot be pre-checked. Must be a deliberate user action.
-                  Payment button is blocked until this is checked.
-              ───────────────────────────────────────────────────────── */}
-              <div
-                id="consent-section"
-                className={`consent-block ${consentError ? "consent-error" : ""}`}
-              >
-                <label className="consent-label">
+              <div className="fields">
+                <Field label="Full Name" error={errors.name}>
                   <input
-                    type="checkbox"
-                    checked={consentGiven}
-                    onChange={e => {
-                      setConsentGiven(e.target.checked);
-                      if (e.target.checked) setConsentError(false);
-                    }}
+                    className={`input-minimal${errors.name ? ' err' : ''}`}
+                    placeholder="As on your ID"
+                    value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   />
+                </Field>
+                <Field label="Email Address" error={errors.email}>
+                  <input
+                    type="email"
+                    className={`input-minimal${errors.email ? ' err' : ''}`}
+                    placeholder="For order confirmation"
+                    value={form.email}
+                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                  />
+                </Field>
+                <Field label="Mobile Number (10 digits)" error={errors.phone}>
+                  <input
+                    type="tel"
+                    className={`input-minimal${errors.phone ? ' err' : ''}`}
+                    placeholder="9XXXXXXXXX"
+                    value={form.phone}
+                    maxLength={10}
+                    onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                  />
+                </Field>
+              </div>
+
+              {/* Consent */}
+              <div id="consent-anchor" className={`consent${consentErr ? ' consent-err' : ''}`}>
+                <label className="consent-label">
+                  <div className={`cbox${consent ? ' checked' : ''}`} onClick={() => { setConsent(c => !c); setConsentErr(false); }}>
+                    {consent && (
+                      <svg viewBox="0 0 10 8" fill="none" stroke="currentColor" strokeWidth="2.5" width="10" height="8">
+                        <path d="M1 4l3 3 5-6"/>
+                      </svg>
+                    )}
+                  </div>
                   <span>
-                    I have read and agree to the{" "}
-                    <a href="/legal/terms" target="_blank">Terms of Use</a>,{" "}
-                    <a href="/legal/privacy-policy" target="_blank">Privacy Policy</a>, and{" "}
+                    I agree to the{' '}
+                    <a href="/legal/terms" target="_blank">Terms of Use</a>,{' '}
+                    <a href="/legal/privacy-policy" target="_blank">Privacy Policy</a> and{' '}
                     <a href="/legal/refund-policy" target="_blank">Refund Policy</a>.
-                    I consent to my name, email, and phone number being shared with{" "}
-                    <strong>Razorpay Software Pvt. Ltd.</strong> and its affiliated financial
-                    institutions for payment processing, fraud prevention, and regulatory
-                    compliance as required under applicable RBI guidelines.
+                    I consent to my name, email and phone being shared with{' '}
+                    <strong>Razorpay Software Pvt. Ltd.</strong> for payment processing and regulatory compliance.
                   </span>
                 </label>
-                {consentError && (
+                {consentErr && (
                   <p className="consent-err-msg">
-                    ⚠ You must accept the terms to proceed with payment.
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><circle cx="7" cy="7" r="6"/><path d="M7 4v3M7 10h.01"/></svg>
+                    Please accept the terms to proceed
                   </p>
                 )}
               </div>
 
-              {/* Security note — reassures customer, consistent with §6.1(iii)(iv) */}
-              <div className="security-note">
-                <span>🔒</span>
-                <span>
-                  Your card details are entered directly into Razorpay's secure,
-                  PCI DSS Level 1 certified gateway. We never see or store your
-                  card number, CVV, or UPI PIN.
-                </span>
+              {/* Security note */}
+              <div className="security">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" width="13" height="13">
+                  <path d="M7 1l5 2.5V7c0 3-5 5-5 5S2 10 2 7V3.5L7 1z"/>
+                </svg>
+                <span>Your card details are entered directly into Razorpay's PCI DSS Level 1 certified gateway. We never store your card number, CVV, or UPI PIN.</span>
               </div>
             </div>
 
-            {/* ── RIGHT: Order Summary ── */}
-            <div className="checkout-right">
-              <h2 className="section-title">Order Summary</h2>
+            {/* ── Right: Order summary ── */}
+            <div className="right">
+              <div className="summary-card">
+                <h3 className="summary-title">Order Summary</h3>
 
-              <div className="order-items">
-                {items.map(item => (
-                  <div key={item.id} className="order-item">
-                    <div>
-                      <p className="item-name">{item.name}</p>
-                      <p className="item-qty">Qty: {item.qty}</p>
+                <div className="items-list">
+                  {items.map(item => (
+                    <div key={item.id} className="item-row">
+                      <div className="item-info">
+                        <span className="item-emoji">{item.emoji || '📦'}</span>
+                        <div>
+                          <p className="item-name">{item.name}</p>
+                          <p className="item-qty">Qty {item.qty}</p>
+                        </div>
+                      </div>
+                      <span className="item-price">₹{(item.price * item.qty).toLocaleString('en-IN')}</span>
                     </div>
-                    <p className="item-price">₹{(item.price * item.qty).toLocaleString("en-IN")}</p>
+                  ))}
+                </div>
+
+                <div className="price-breakdown">
+                  <div className="price-row">
+                    <span>Subtotal</span><span>₹{total.toLocaleString('en-IN')}</span>
                   </div>
-                ))}
-              </div>
+                  <div className="price-row">
+                    <span>GST (18%)</span><span>₹{gst.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="price-row">
+                    <span>Shipping</span>
+                    <span className={shipping === 0 ? 'free' : ''}>
+                      {shipping === 0 ? 'Complimentary' : `₹${shipping}`}
+                    </span>
+                  </div>
+                  <div className="price-total">
+                    <span>Total</span>
+                    <span>₹{grandTotal.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
 
-              <div className="order-total">
-                <span>Total</span>
-                <span>₹{total.toLocaleString("en-IN")}</span>
-              </div>
+                <button
+                  className={`pay-btn${!consent ? ' blocked' : ''}`}
+                  onClick={handlePay}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="spinner" />
+                  ) : (
+                    <>
+                      <span>Pay ₹{grandTotal.toLocaleString('en-IN')}</span>
+                      <span className="pay-method">Cards · UPI · Wallets</span>
+                    </>
+                  )}
+                </button>
 
-              <button
-                className={`pay-btn ${loading ? "loading" : ""} ${!consentGiven ? "disabled" : ""}`}
-                onClick={handlePay}
-                disabled={loading}
-                title={!consentGiven ? "Please accept the terms above to continue" : ""}
-              >
-                {loading ? (
-                  <span className="spinner" />
-                ) : (
-                  <>
-                    <span>Pay ₹{total.toLocaleString("en-IN")}</span>
-                    <span className="pay-sub">via Razorpay · Cards / UPI / Wallets</span>
-                  </>
-                )}
-              </button>
-
-              {/* Policy links in summary — reinforces visibility per §6.1(b) */}
-              <div className="summary-policies">
-                <a href="/legal/refund-policy" target="_blank">7-day returns</a>
-                <span>·</span>
-                <a href="/legal/terms" target="_blank">T&amp;C</a>
-                <span>·</span>
-                <a href="/legal/grievance" target="_blank">Grievances</a>
+                <div className="summary-links">
+                  <a href="/legal/refund-policy" target="_blank">7-day returns</a>
+                  <span>·</span>
+                  <a href="/legal/terms" target="_blank">Terms</a>
+                  <span>·</span>
+                  <a href="/legal/grievance" target="_blank">Grievances</a>
+                </div>
               </div>
             </div>
-
           </div>
         </main>
-
-        <Footer />
       </div>
 
       <style jsx>{`
-        .page-wrap { display: flex; flex-direction: column; min-height: 100vh; }
-        .checkout-page {
-          flex: 1;
-          padding: 40px 24px 80px;
-          position: relative; z-index: 1;
-        }
-        .checkout-container {
-          max-width: 980px;
-          margin: 0 auto;
-          display: grid;
-          grid-template-columns: 1fr 400px;
-          gap: 40px;
-          align-items: start;
-        }
-        @media (max-width: 800px) {
-          .checkout-container { grid-template-columns: 1fr; }
-        }
-        .section-title {
-          font-family: 'Syne', sans-serif;
-          font-size: 20px;
-          font-weight: 800;
-          margin-bottom: 24px;
-          letter-spacing: -0.5px;
-        }
-        .form-group {
-          display: flex; flex-direction: column; gap: 6px;
-          margin-bottom: 18px;
-        }
-        .form-group label {
-          font-size: 12px; font-weight: 600;
-          color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .form-group small { font-weight: 400; text-transform: none; }
-        .form-group input {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 10px;
-          padding: 12px 16px;
-          color: var(--text);
-          font-size: 15px;
-          outline: none;
-          transition: border-color 0.2s;
-        }
-        .form-group input:focus { border-color: var(--accent); }
-        .form-group input.error { border-color: #ff4d4d; }
-        .err { font-size: 12px; color: #ff4d4d; }
+        .page { min-height:100vh; background:var(--bg); position:relative; overflow-x:hidden; }
+        .ambient1 { position:fixed; top:-15%; right:-5%; width:600px; height:600px; background:radial-gradient(circle,rgba(27,77,62,0.18) 0%,transparent 70%); pointer-events:none; z-index:0; }
+        .ambient2 { position:fixed; bottom:-10%; left:-5%; width:400px; height:400px; background:radial-gradient(circle,rgba(233,195,73,0.07) 0%,transparent 70%); pointer-events:none; z-index:0; }
 
-        /* Consent block */
-        .consent-block {
-          background: rgba(0,229,176,0.04);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 16px 18px;
-          margin: 24px 0 20px;
-          transition: border-color 0.2s;
-        }
-        .consent-block.consent-error {
-          border-color: #ff4d4d;
-          background: rgba(255,77,77,0.05);
-        }
-        .consent-label {
-          display: flex;
-          gap: 12px;
-          align-items: flex-start;
-          cursor: pointer;
-          font-size: 13px;
-          color: var(--muted);
-          line-height: 1.7;
-        }
-        .consent-label input[type="checkbox"] {
-          margin-top: 3px;
-          flex-shrink: 0;
-          width: 16px; height: 16px;
-          accent-color: var(--accent);
-          cursor: pointer;
-        }
-        .consent-label a { color: var(--accent); text-decoration: underline; }
-        .consent-err-msg {
-          margin-top: 10px;
-          font-size: 12px;
-          color: #ff4d4d;
-          font-weight: 600;
-        }
+        /* Header */
+        .chead { position:sticky; top:0; z-index:50; background:rgba(9,22,16,0.85); backdrop-filter:blur(24px); border-bottom:1px solid rgba(65,72,67,0.2); padding:0 32px; height:64px; display:flex; align-items:center; justify-content:space-between; }
+        .logo { font-family:'Noto Serif',serif; font-size:18px; font-weight:300; font-style:italic; color:var(--gold); }
+        .steps { display:flex; align-items:center; gap:0; }
+        .step { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text3); }
+        .step.active { color:var(--gold); }
+        .step-n { width:24px; height:24px; border-radius:50%; border:1px solid currentColor; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
+        .step.active .step-n { background:linear-gradient(135deg,var(--gold),var(--gold-dark)); border-color:transparent; color:var(--on-gold); }
+        .step-line { width:40px; height:1px; background:rgba(65,72,67,0.4); margin:0 12px; }
 
-        .security-note {
-          display: flex;
-          gap: 10px;
-          align-items: flex-start;
-          font-size: 12px;
-          color: var(--muted);
-          line-height: 1.6;
-          padding: 12px 16px;
-          background: var(--surface);
-          border-radius: 10px;
-        }
+        /* Main */
+        .main { max-width:1200px; margin:0 auto; padding:48px 32px 80px; position:relative; z-index:1; }
+        .grid { display:grid; grid-template-columns:1fr 420px; gap:40px; align-items:start; }
+        @media(max-width:900px){.grid{grid-template-columns:1fr}}
 
-        /* Right panel */
-        .checkout-right {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 16px;
-          padding: 28px;
-          position: sticky;
-          top: 24px;
-        }
-        .order-items { margin-bottom: 20px; }
-        .order-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          padding: 12px 0;
-          border-bottom: 1px solid var(--border);
-        }
-        .item-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-        .item-qty { font-size: 12px; color: var(--muted); }
-        .item-price { font-size: 15px; font-weight: 700; color: var(--accent); }
-        .order-total {
-          display: flex;
-          justify-content: space-between;
-          font-family: 'Syne', sans-serif;
-          font-size: 20px;
-          font-weight: 800;
-          padding: 16px 0;
-          border-top: 2px solid var(--border);
-          margin-bottom: 20px;
-        }
+        /* Section label */
+        .section-label { display:flex; align-items:center; gap:14px; margin-bottom:32px; }
+        .section-num { width:32px; height:32px; border-radius:50%; background:rgba(233,195,73,0.12); border:1px solid rgba(233,195,73,0.3); color:var(--gold); font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .section-label h2 { font-family:'Noto Serif',serif; font-size:22px; font-weight:300; font-style:italic; letter-spacing:-.2px; }
+        .fields { display:flex; flex-direction:column; gap:0; margin-bottom:28px; }
+        :global(.input-minimal.err) { border-bottom-color:var(--error) !important; }
 
-        .pay-btn {
-          width: 100%;
-          background: var(--accent);
-          color: #000;
-          border: none;
-          border-radius: 12px;
-          padding: 16px;
-          font-family: 'Syne', sans-serif;
-          font-size: 16px;
-          font-weight: 800;
-          cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 3px;
-          transition: opacity 0.2s, transform 0.1s;
-        }
-        .pay-btn:hover:not(.disabled):not(.loading) {
-          opacity: 0.9;
-          transform: translateY(-1px);
-        }
-        .pay-btn.disabled {
-          opacity: 0.45;
-          cursor: not-allowed;
-        }
-        .pay-sub { font-size: 11px; font-weight: 500; opacity: 0.7; }
-        .pay-btn.loading { pointer-events: none; opacity: 0.6; }
-        .spinner {
-          width: 22px; height: 22px;
-          border: 3px solid rgba(0,0,0,0.2);
-          border-top-color: #000;
-          border-radius: 50%;
-          animation: spin 0.7s linear infinite;
-          display: block;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* Consent */
+        .consent { margin-bottom:24px; padding:18px 20px; background:rgba(42,56,49,0.4); border-radius:16px; box-shadow:inset 0 1px 1px rgba(65,72,67,0.25); transition:background .2s; }
+        .consent.consent-err { background:rgba(255,180,171,0.08); box-shadow:inset 0 0 0 1px rgba(255,180,171,0.3); }
+        .consent-label { display:flex; align-items:flex-start; gap:12px; cursor:default; font-size:12.5px; color:var(--text2); line-height:1.7; }
+        .cbox { width:18px; height:18px; border-radius:5px; border:1.5px solid rgba(65,72,67,0.6); flex-shrink:0; margin-top:2px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+        .cbox.checked { background:linear-gradient(135deg,var(--gold),var(--gold-dark)); border-color:transparent; color:var(--on-gold); }
+        .consent-label a { color:var(--teal); text-decoration:underline; text-underline-offset:2px; }
+        .consent-label strong { color:var(--text); }
+        .consent-err-msg { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--error); margin-top:10px; font-weight:600; }
 
-        .summary-policies {
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-          margin-top: 14px;
-          font-size: 12px;
-          color: var(--muted);
-        }
-        .summary-policies a { color: var(--muted); text-decoration: underline; }
-        .summary-policies a:hover { color: var(--accent); }
+        /* Security */
+        .security { display:flex; gap:10px; align-items:flex-start; font-size:11.5px; color:var(--text3); line-height:1.6; padding:14px 18px; background:rgba(32,45,38,0.5); border-radius:12px; box-shadow:inset 0 1px 1px rgba(65,72,67,0.2); }
+        .security svg { flex-shrink:0; margin-top:2px; color:var(--text3); }
+
+        /* Summary card */
+        .summary-card { background:rgba(42,56,49,0.55); backdrop-filter:blur(24px); border-radius:24px; padding:28px; box-shadow:inset 0 1px 1px rgba(65,72,67,0.3),0 20px 48px rgba(5,17,11,0.3); position:sticky; top:88px; }
+        .summary-title { font-family:'Noto Serif',serif; font-size:18px; font-weight:300; font-style:italic; margin-bottom:20px; letter-spacing:-.2px; }
+        .items-list { margin-bottom:20px; }
+        .item-row { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid rgba(65,72,67,0.15); }
+        .item-row:last-child { border:none; }
+        .item-info { display:flex; align-items:center; gap:10px; }
+        .item-emoji { font-size:22px; }
+        .item-name { font-size:12.5px; font-weight:500; color:var(--text); }
+        .item-qty { font-size:11px; color:var(--text3); margin-top:1px; }
+        .item-price { font-family:'Noto Serif',serif; font-size:14px; color:var(--gold); }
+        .price-breakdown { padding-top:4px; }
+        .price-row { display:flex; justify-content:space-between; font-size:12.5px; color:var(--text2); padding:5px 0; }
+        .free { color:var(--teal); font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+        .price-total { display:flex; justify-content:space-between; font-family:'Noto Serif',serif; font-size:20px; font-weight:300; color:var(--text); border-top:1px solid rgba(65,72,67,0.2); padding-top:14px; margin-top:8px; }
+        .price-total span:last-child { color:var(--gold); }
+
+        /* Pay button */
+        .pay-btn { width:100%; height:56px; margin-top:20px; background:linear-gradient(135deg,var(--gold) 0%,var(--gold-dark) 100%); color:var(--on-gold); border:none; border-radius:999px; font-family:'Manrope',sans-serif; font-size:12px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; box-shadow:0 10px 28px rgba(233,195,73,0.25); transition:transform .2s, box-shadow .2s, opacity .2s; }
+        .pay-btn:hover:not(:disabled) { transform:scale(1.02); box-shadow:0 14px 36px rgba(233,195,73,0.35); }
+        .pay-btn:active { transform:scale(0.99); }
+        .pay-btn.blocked { opacity:.35; cursor:not-allowed; }
+        .pay-btn:disabled { cursor:not-allowed; opacity:.6; }
+        .pay-method { font-size:9px; font-weight:500; letter-spacing:.12em; opacity:.65; text-transform:uppercase; }
+        .spinner { width:20px; height:20px; border:2px solid rgba(60,47,0,0.25); border-top-color:var(--on-gold); border-radius:50%; animation:spin .7s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        .summary-links { display:flex; justify-content:center; gap:8px; margin-top:14px; font-size:11px; color:var(--text3); }
+        .summary-links a { color:var(--text3); text-decoration:underline; text-underline-offset:2px; transition:color .15s; }
+        .summary-links a:hover { color:var(--teal); }
       `}</style>
     </>
+  );
+}
+
+function Field({ label, error, children }) {
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: error ? 'var(--error)' : 'var(--text3)', marginBottom: 6 }}>
+        {label}
+      </div>
+      {children}
+      {error && (
+        <p style={{ fontSize: 11, color: 'var(--error)', marginTop: 5, fontWeight: 500 }}>{error}</p>
+      )}
+    </div>
   );
 }

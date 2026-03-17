@@ -6,11 +6,11 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 
 const STATUS_STYLES = {
-  pending:    { bg: 'rgba(245,158,11,0.12)', color: '#f59e0b' },
-  processing: { bg: 'rgba(59,130,246,0.12)', color: '#60a5fa' },
-  shipped:    { bg: 'rgba(139,92,246,0.12)', color: '#a78bfa' },
-  delivered:  { bg: 'rgba(34,197,94,0.12)',  color: '#4ade80' },
-  cancelled:  { bg: 'rgba(239,68,68,0.12)',  color: '#f87171' },
+  pending:    { bg: 'rgba(233,195,73,0.12)',  color: '#e9c349' },
+  processing: { bg: 'rgba(158,209,189,0.12)', color: '#9ed1bd' },
+  shipped:    { bg: 'rgba(193,201,191,0.12)', color: '#c1c9bf' },
+  delivered:  { bg: 'rgba(103,152,134,0.15)', color: '#679886' },
+  cancelled:  { bg: 'rgba(255,180,171,0.12)', color: '#ffb4ab' },
 };
 
 const ALL_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -45,7 +45,6 @@ export default function AdminDashboard() {
         {/* Sidebar */}
         <aside className="sidebar">
           <div className="sb-logo">
-            <span className="ldot" />
             YourStore
           </div>
 
@@ -93,48 +92,48 @@ export default function AdminDashboard() {
           background: var(--bg);
         }
         .sidebar {
-          width: 220px;
+          width: 228px;
           flex-shrink: 0;
-          background: var(--surface);
-          border-right: 1px solid var(--border);
+          background: rgba(17,30,24,0.95);
+          border-right: 1px solid rgba(65,72,67,0.2);
           display: flex;
           flex-direction: column;
-          padding: 20px 12px;
+          padding: 24px 14px;
           position: sticky;
           top: 0;
           height: 100vh;
           overflow-y: auto;
         }
         .sb-logo {
-          display: flex; align-items: center; gap: 8px;
-          font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800;
-          color: var(--text); padding: 4px 12px; margin-bottom: 24px;
+          font-family: 'Noto Serif', serif; font-size: 18px; font-weight: 300;
+          font-style: italic; color: var(--gold);
+          padding: 4px 10px; margin-bottom: 28px; letter-spacing: -0.3px;
         }
-        .ldot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+        .ldot { display: none; }
         .sb-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
         :global(.sb-item) {
           display: flex; align-items: center; gap: 10px;
-          padding: 10px 12px; border-radius: 10px;
-          font-size: 13.5px; font-weight: 500; color: var(--text2);
+          padding: 10px 12px; border-radius: 12px;
+          font-size: 13px; font-weight: 500; color: var(--text2);
           border: none; background: none; width: 100%; text-align: left;
-          cursor: pointer; font-family: 'Inter', sans-serif;
+          cursor: pointer; font-family: 'Manrope', sans-serif;
           transition: background 0.15s, color 0.15s;
           text-decoration: none;
         }
-        :global(.sb-item:hover) { background: var(--surface2); color: var(--text); }
-        :global(.sb-item.active) { background: rgba(124,106,247,0.15); color: var(--accent2); }
+        :global(.sb-item:hover) { background: rgba(42,56,49,0.5); color: var(--text); }
+        :global(.sb-item.active) { background: rgba(233,195,73,0.1); color: var(--gold); }
         :global(.sb-icon) { font-size: 15px; width: 20px; text-align: center; }
-        .sb-bottom { padding-top: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; }
-        :global(.logout) { color: var(--red) !important; }
-        :global(.logout:hover) { background: rgba(239,68,68,0.1) !important; }
+        .sb-bottom { padding-top: 16px; border-top: 1px solid rgba(65,72,67,0.2); display: flex; flex-direction: column; gap: 2px; }
+        :global(.logout) { color: var(--error) !important; }
+        :global(.logout:hover) { background: rgba(255,180,171,0.08) !important; }
         .content {
           flex: 1;
-          padding: 32px;
+          padding: 36px;
           overflow-y: auto;
           min-width: 0;
         }
         @media (max-width: 768px) {
-          .sidebar { width: 60px; }
+          .sidebar { width: 64px; }
           :global(.sb-item span:not(.sb-icon)) { display: none; }
           .sb-logo span:not(.ldot) { display: none; }
         }
@@ -167,7 +166,7 @@ function AnalyticsPanel() {
       {/* KPI cards */}
       <div className="kpis">
         <KPICard label="Total Revenue" value={`₹${Math.round(data.totalRevenue / 100000 * 10) / 10}L`} sub="from delivered orders" color="var(--teal)" />
-        <KPICard label="Total Orders"  value={data.totalOrders}  sub="all time" color="var(--accent2)" />
+        <KPICard label="Total Orders"  value={data.totalOrders}  sub="all time" color="var(--teal)" />
         <KPICard label="Pending / Processing" value={data.pendingOrders} sub="need attention" color="var(--amber)" />
         <KPICard label="Products" value={data.products?.total} sub={`${data.products?.out_of_stock} out of stock`} color="var(--blue)" />
       </div>
@@ -236,22 +235,22 @@ function AnalyticsPanel() {
       </div>
 
       <style jsx>{`
-        .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+        .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
         @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}}
         .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
         @media(max-width:900px){.two-col{grid-template-columns:1fr}}
         .bar-chart { display:flex; align-items:flex-end; gap:3px; height:180px; padding-bottom:20px; position:relative; }
         .bar-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; position:relative; height:100%; cursor:default; }
-        .bar-fill { width:100%; background:var(--accent); border-radius:3px 3px 0 0; min-height:2px; transition:opacity .15s; }
+        .bar-fill { width:100%; background:linear-gradient(to top,#ad8b0e,#e9c349); border-radius:3px 3px 0 0; min-height:2px; transition:opacity .15s; }
         .bar-col:hover .bar-fill { opacity:.7; }
-        .bar-label { position:absolute; bottom:-18px; font-size:9px; color:var(--text3); white-space:nowrap; }
-        .chart-empty { height:180px; display:flex; align-items:center; justify-content:center; color:var(--text2); font-size:13px; }
-        .status-list { display:flex; flex-direction:column; gap:12px; }
+        .bar-label { position:absolute; bottom:-18px; font-size:9px; color:var(--text3); white-space:nowrap; letter-spacing:.04em; }
+        .chart-empty { height:180px; display:flex; align-items:center; justify-content:center; color:var(--text2); font-size:13px; font-style:italic; }
+        .status-list { display:flex; flex-direction:column; gap:14px; }
         .status-row { display:grid; grid-template-columns:100px 1fr 80px; align-items:center; gap:10px; }
-        .status-bar-wrap { background:var(--surface2); border-radius:4px; height:6px; overflow:hidden; }
-        .status-bar-fill { height:100%; border-radius:4px; transition:width .4s; }
+        .status-bar-wrap { background:rgba(65,72,67,0.3); border-radius:4px; height:5px; overflow:hidden; }
+        .status-bar-fill { height:100%; border-radius:4px; transition:width .5s cubic-bezier(0.4,0,0.2,1); opacity:0.8; }
         .status-count { font-size:12px; color:var(--text2); text-align:right; }
-        .status-count b { color:var(--text); }
+        .status-count b { color:var(--text); font-weight:600; }
       `}</style>
     </div>
   );
@@ -364,7 +363,7 @@ function OrdersPanel() {
             <thead>
               <tr>
                 <th style={{ width: 36 }}>
-                  <input type="checkbox" style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
+                  <input type="checkbox" style={{ accentColor: 'var(--gold)', cursor: 'pointer' }}
                     checked={selected.size === orders.length && orders.length > 0}
                     onChange={toggleAll}
                   />
@@ -382,7 +381,7 @@ function OrdersPanel() {
                 return (
                   <tr key={o.order_ref} className={selected.has(o.order_ref) ? 'sel' : ''}>
                     <td>
-                      <input type="checkbox" style={{ accentColor: 'var(--accent)', cursor: 'pointer' }}
+                      <input type="checkbox" style={{ accentColor: 'var(--gold)', cursor: 'pointer' }}
                         checked={selected.has(o.order_ref)}
                         onChange={() => toggleSel(o.order_ref)}
                       />
@@ -423,29 +422,30 @@ function OrdersPanel() {
       )}
 
       <style jsx>{`
-        .order-filters { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+        .order-filters { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px; }
         .filter-tabs { display:flex; gap:4px; flex-wrap:wrap; }
-        .ftab { padding:6px 14px; border-radius:20px; border:1px solid var(--border); font-size:12px; font-weight:500; background:var(--surface2); color:var(--text2); transition:all .15s; }
-        .ftab:hover { border-color:var(--border2); color:var(--text); }
-        .ftab.on { background:var(--surface); color:var(--text); border-color:var(--border2); font-weight:600; }
+        .ftab { padding:6px 16px; border-radius:999px; border:1px solid rgba(65,72,67,0.3); font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; background:rgba(42,56,49,0.4); color:var(--text3); transition:all .15s; font-family:'Manrope',sans-serif; }
+        .ftab:hover { border-color:rgba(65,72,67,0.5); color:var(--text2); }
+        .ftab.on { background:rgba(233,195,73,0.12); color:var(--gold); border-color:rgba(233,195,73,0.3); }
         .filter-right { display:flex; gap:8px; align-items:center; }
         .search-wrap { position:relative; }
-        .search-wrap input { height:36px; padding:0 12px 0 30px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; outline:none; width:220px; font-family:'Inter',sans-serif; }
-        .search-wrap input:focus { border-color:var(--accent); }
-        .si { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text3); pointer-events:none; }
-        select { height:36px; padding:0 28px 0 10px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; outline:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5a78'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; cursor:pointer; }
-        select:focus { border-color:var(--accent); }
-        .status-sel { height:30px; font-size:12px; min-width:110px; }
+        .search-wrap input { height:38px; padding:0 12px 0 32px; background:rgba(42,56,49,0.5); border:1px solid rgba(65,72,67,0.3); border-radius:999px; color:var(--text); font-size:13px; outline:none; width:220px; font-family:'Manrope',sans-serif; }
+        .search-wrap input:focus { border-color:rgba(233,195,73,0.4); }
+        .si { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--text3); pointer-events:none; }
+        select { height:38px; padding:0 28px 0 14px; background:rgba(42,56,49,0.5); border:1px solid rgba(65,72,67,0.3); border-radius:999px; color:var(--text); font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; outline:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b938c'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; cursor:pointer; font-family:'Manrope',sans-serif; }
+        select:focus { border-color:rgba(233,195,73,0.4); }
+        .status-sel { height:32px; font-size:11px; min-width:110px; border-radius:8px; letter-spacing:.04em; }
         .table-wrap { overflow-x:auto; }
-        .bulk-bar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 14px; background:var(--surface2); border-radius:10px; margin-bottom:12px; font-size:13px; color:var(--text2); }
-        .bulk-btn { padding:5px 12px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--text); font-size:12px; font-weight:500; cursor:pointer; }
-        .bulk-btn:hover { border-color:var(--accent); }
-        .bulk-btn.danger { color:var(--red); border-color:rgba(239,68,68,.3); }
+        .bulk-bar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 16px; background:rgba(32,45,38,0.8); border-radius:14px; margin-bottom:14px; font-size:12px; color:var(--text2); box-shadow:inset 0 1px 1px rgba(65,72,67,0.2); }
+        .bulk-btn { padding:7px 16px; border:1px solid rgba(65,72,67,0.4); border-radius:999px; background:rgba(42,56,49,0.5); color:var(--text2); font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; font-family:'Manrope',sans-serif; transition:all .15s; }
+        .bulk-btn:hover { border-color:rgba(233,195,73,0.4); color:var(--gold); }
+        .bulk-btn.danger { color:var(--error); border-color:rgba(255,180,171,0.25); }
+        .bulk-btn.danger:hover { background:rgba(255,180,171,0.08); }
         .pager { display:flex; align-items:center; justify-content:center; gap:16px; margin-top:16px; }
-        .pgb { padding:7px 16px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text2); font-size:13px; cursor:pointer; }
-        .pgb:disabled { opacity:.3; cursor:not-allowed; }
-        .pgb:not(:disabled):hover { border-color:var(--accent); color:var(--text); }
-        tr.sel { background:rgba(124,106,247,.06); }
+        .pgb { padding:8px 20px; border:1px solid rgba(65,72,67,0.3); border-radius:999px; background:rgba(42,56,49,0.4); color:var(--text2); font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; font-family:'Manrope',sans-serif; transition:all .15s; }
+        .pgb:disabled { opacity:.25; cursor:not-allowed; }
+        .pgb:not(:disabled):hover { border-color:rgba(233,195,73,0.4); color:var(--gold); }
+        tr.sel { background:rgba(233,195,73,0.04); }
       `}</style>
     </div>
   );
@@ -555,7 +555,7 @@ function ProductsPanel() {
                   <td><span className="cat-tag">{p.category}</span></td>
                   <td><b>₹{parseInt(p.price).toLocaleString('en-IN')}</b></td>
                   <td>
-                    <span style={{ color: p.stock === 0 ? 'var(--red)' : p.stock < 10 ? 'var(--amber)' : 'var(--green)', fontWeight: 600 }}>
+                    <span style={{ color: p.stock === 0 ? 'var(--error)' : p.stock < 10 ? 'var(--amber)' : 'var(--green)', fontWeight: 600 }}>
                       {p.stock}
                     </span>
                   </td>
@@ -563,14 +563,17 @@ function ProductsPanel() {
                   <td>
                     <span className="badge" style={p.is_active
                       ? { background: 'rgba(34,197,94,0.12)', color: 'var(--green)' }
-                      : { background: 'rgba(239,68,68,0.12)', color: 'var(--red)' }}>
+                      : { background: 'rgba(239,68,68,0.12)', color: 'var(--error)' }}>
                       {p.is_active ? 'Active' : 'Hidden'}
                     </span>
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button className="row-btn" onClick={() => setEditing(p)}>Edit</button>
-                      <button className="row-btn" onClick={() => toggleActive(p)} style={{ color: p.is_active ? 'var(--red)' : 'var(--green)' }}>
+                      <button className="row-btn edit-btn" onClick={() => setEditing(p)}>
+                        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" width="11" height="11" style={{marginRight:4}}><path d="M9.5 2.5l2 2-7 7H2.5v-2l7-7z"/></svg>
+                        Edit
+                      </button>
+                      <button className="row-btn toggle-btn" onClick={() => toggleActive(p)} data-active={p.is_active}>
                         {p.is_active ? 'Hide' : 'Show'}
                       </button>
                     </div>
@@ -591,20 +594,26 @@ function ProductsPanel() {
       )}
 
       <style jsx>{`
-        .prod-filters { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+        .prod-filters { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
         .search-wrap { position:relative; flex:1; min-width:200px; }
-        .search-wrap input { height:36px; padding:0 12px 0 30px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; outline:none; width:100%; font-family:'Inter',sans-serif; }
-        .search-wrap input:focus { border-color:var(--accent); }
-        .si { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text3); pointer-events:none; }
-        select { height:36px; padding:0 28px 0 10px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:13px; outline:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5a78'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; cursor:pointer; }
+        .search-wrap input { height:38px; padding:0 14px 0 32px; background:rgba(42,56,49,0.5); border:1px solid rgba(65,72,67,0.3); border-radius:999px; color:var(--text); font-size:13px; outline:none; width:100%; font-family:'Manrope',sans-serif; }
+        .search-wrap input:focus { border-color:rgba(233,195,73,0.4); }
+        .si { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--text3); pointer-events:none; }
+        select { height:38px; padding:0 28px 0 14px; background:rgba(42,56,49,0.5); border:1px solid rgba(65,72,67,0.3); border-radius:999px; color:var(--text); font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; outline:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b938c'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; cursor:pointer; font-family:'Manrope',sans-serif; }
         .table-wrap { overflow-x:auto; }
-        .row-btn { padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:none; color:var(--text2); font-size:11px; font-weight:500; cursor:pointer; transition:all .15s; }
-        .row-btn:hover { border-color:var(--accent); color:var(--text); }
-        .new-pill { font-size:9px; font-weight:700; text-transform:uppercase; background:var(--accent); color:#fff; padding:1px 6px; border-radius:99px; letter-spacing:.5px; }
-        .pager { display:flex; align-items:center; justify-content:center; gap:16px; margin-top:16px; }
-        .pgb { padding:7px 16px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--text2); font-size:13px; cursor:pointer; }
-        .pgb:disabled { opacity:.3; cursor:not-allowed; }
-        .pgb:not(:disabled):hover { border-color:var(--accent); color:var(--text); }
+        .row-btn { display:inline-flex; align-items:center; gap:5px; padding:6px 14px; border-radius:999px; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; transition:all .18s; font-family:'Manrope',sans-serif; white-space:nowrap; }
+        .row-btn:hover { transform:scale(1.04); }
+        .edit-btn { border:1px solid rgba(158,209,189,0.3); color:var(--teal); background:rgba(158,209,189,0.08); }
+        .edit-btn:hover { background:rgba(158,209,189,0.16); border-color:rgba(158,209,189,0.5); }
+        .toggle-btn[data-active="true"] { color:var(--error); border:1px solid rgba(255,180,171,0.3); background:rgba(255,180,171,0.08); }
+        .toggle-btn[data-active="true"]:hover { background:rgba(255,180,171,0.16); }
+        .toggle-btn[data-active="false"] { color:var(--gold); border:1px solid rgba(233,195,73,0.3); background:rgba(233,195,73,0.08); }
+        .toggle-btn[data-active="false"]:hover { background:rgba(233,195,73,0.16); }
+        .new-pill { font-size:9px; font-weight:700; text-transform:uppercase; background:linear-gradient(135deg,var(--gold),var(--gold-dark)); color:var(--on-gold); padding:2px 8px; border-radius:99px; letter-spacing:.06em; }
+        .pager { display:flex; align-items:center; justify-content:center; gap:16px; margin-top:18px; }
+        .pgb { padding:8px 20px; border:1px solid rgba(65,72,67,0.3); border-radius:999px; background:rgba(42,56,49,0.4); color:var(--text2); font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; font-family:'Manrope',sans-serif; transition:all .15s; }
+        .pgb:disabled { opacity:.25; cursor:not-allowed; }
+        .pgb:not(:disabled):hover { border-color:rgba(233,195,73,0.4); color:var(--gold); }
       `}</style>
     </div>
   );
@@ -644,14 +653,14 @@ function SetupPanel() {
             placeholder="Admin passkey"
             value={passkey}
             onChange={e => setPasskey(e.target.value)}
-            style={{ flex: 1, height: 40, padding: '0 14px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontSize: 14, outline: 'none', fontFamily: 'Inter, sans-serif' }}
+            style={{ flex: 1, height: 40, padding: '0 14px', background: 'rgba(42,56,49,0.5)', border: '1px solid rgba(65,72,67,0.3)', borderRadius: 8, color: 'var(--text)', fontSize: 14, outline: 'none', fontFamily: 'Inter, sans-serif' }}
           />
-          <button onClick={runSetup} disabled={loading || !passkey} style={{ padding: '0 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>
+          <button onClick={runSetup} disabled={loading || !passkey} style={{ padding: '0 20px', background: 'var(--gold)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}>
             {loading ? 'Running…' : 'Run Setup'}
           </button>
         </div>
         {result && (
-          <div style={{ padding: '12px 16px', background: result.ok ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${result.ok ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`, borderRadius: 10, fontSize: 13, color: result.ok ? 'var(--green)' : 'var(--red)' }}>
+          <div style={{ padding: '12px 16px', background: result.ok ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${result.ok ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`, borderRadius: 10, fontSize: 13, color: result.ok ? 'var(--green)' : 'var(--error)' }}>
             {result.ok ? (
               <>
                 ✓ Setup complete — {result.data.productsInserted} products inserted<br />
@@ -674,7 +683,7 @@ function AddProductForm({ onSave, onClose }) {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, marginBottom: 20 }}>Add Product</h3>
+        <h3 style={{ fontFamily: "'Noto Serif', serif", fontWeight: 300, fontStyle: 'italic', fontSize: 22, marginBottom: 20, letterSpacing: '-0.2px' }}>Add Product</h3>
         <div className="form-grid">
           <FormField label="SKU *"><input value={form.sku} onChange={up('sku')} placeholder="SKU-0241" /></FormField>
           <FormField label="Emoji"><input value={form.emoji} onChange={up('emoji')} style={{ width: 60 }} /></FormField>
@@ -688,12 +697,12 @@ function AddProductForm({ onSave, onClose }) {
           <FormField label="Stock"><input type="number" value={form.stock} onChange={up('stock')} placeholder="50" /></FormField>
         </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', marginTop: 8, cursor: 'pointer' }}>
-          <input type="checkbox" checked={form.is_new} onChange={e => setForm(f => ({ ...f, is_new: e.target.checked }))} style={{ accentColor: 'var(--accent)' }} />
+          <input type="checkbox" checked={form.is_new} onChange={e => setForm(f => ({ ...f, is_new: e.target.checked }))} style={{ accentColor: 'var(--gold)' }} />
           Mark as New
         </label>
         <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-          <button style={{ flex: 1, height: 40, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }} onClick={() => onSave(form)}>Add Product</button>
-          <button style={{ flex: 1, height: 40, background: 'none', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text2)', cursor: 'pointer' }} onClick={onClose}>Cancel</button>
+          <button style={{ flex: 1, height: 46, background: 'linear-gradient(135deg,#e9c349,#ad8b0e)', color: '#3c2f00', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: "'Manrope',sans-serif" }} onClick={() => onSave(form)}>Add Product</button>
+          <button style={{ flex: 1, height: 46, background: 'none', border: '1px solid rgba(65,72,67,0.4)', borderRadius: 999, color: 'var(--text2)', cursor: 'pointer', fontFamily: "'Manrope',sans-serif", fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }} onClick={onClose}>Cancel</button>
         </div>
       </div>
       <ModalStyle />
@@ -708,7 +717,7 @@ function EditProductForm({ product: p, onSave, onClose }) {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h3 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 700, marginBottom: 4 }}>Edit Product</h3>
+        <h3 style={{ fontFamily: "'Noto Serif', serif", fontWeight: 300, fontStyle: 'italic', fontSize: 22, marginBottom: 4, letterSpacing: '-0.2px' }}>Edit Product</h3>
         <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 20 }}>{p.sku}</p>
         <div className="form-grid">
           <FormField label="Name" full><input value={form.name} onChange={up('name')} /></FormField>
@@ -718,15 +727,15 @@ function EditProductForm({ product: p, onSave, onClose }) {
         </div>
         <div style={{ display: 'flex', gap: 20, marginTop: 8 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.is_new} onChange={e => setForm(f => ({ ...f, is_new: e.target.checked }))} style={{ accentColor: 'var(--accent)' }} /> New
+            <input type="checkbox" checked={form.is_new} onChange={e => setForm(f => ({ ...f, is_new: e.target.checked }))} style={{ accentColor: 'var(--gold)' }} /> New
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', cursor: 'pointer' }}>
-            <input type="checkbox" checked={form.is_active} onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))} style={{ accentColor: 'var(--accent)' }} /> Active
+            <input type="checkbox" checked={form.is_active} onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))} style={{ accentColor: 'var(--gold)' }} /> Active
           </label>
         </div>
         <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-          <button style={{ flex: 1, height: 40, background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }} onClick={() => onSave(p.id, form)}>Save Changes</button>
-          <button style={{ flex: 1, height: 40, background: 'none', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text2)', cursor: 'pointer' }} onClick={onClose}>Cancel</button>
+          <button style={{ flex: 1, height: 46, background: 'linear-gradient(135deg,#e9c349,#ad8b0e)', color: '#3c2f00', border: 'none', borderRadius: 999, fontWeight: 700, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: "'Manrope',sans-serif" }} onClick={() => onSave(p.id, form)}>Save Changes</button>
+          <button style={{ flex: 1, height: 46, background: 'none', border: '1px solid rgba(65,72,67,0.4)', borderRadius: 999, color: 'var(--text2)', cursor: 'pointer', fontFamily: "'Manrope',sans-serif", fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }} onClick={onClose}>Cancel</button>
         </div>
       </div>
       <ModalStyle />
@@ -737,20 +746,20 @@ function EditProductForm({ product: p, onSave, onClose }) {
 // ── Shared sub-components ─────────────────────────────────────────────────────
 function KPICard({ label, value, sub, color }) {
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '18px 20px' }}>
-      <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 8 }}>{label}</div>
-      <div style={{ fontFamily: 'Syne, sans-serif', fontSize: 28, fontWeight: 800, color: color || 'var(--text)', lineHeight: 1.1 }}>{value}</div>
-      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>{sub}</div>
+    <div style={{ background: 'rgba(32,45,38,0.7)', borderRadius: 18, padding: '20px 22px', boxShadow: 'inset 0 1px 1px rgba(65,72,67,0.25)' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text3)', marginBottom: 10 }}>{label}</div>
+      <div style={{ fontFamily: 'Noto Serif, serif', fontSize: 30, fontWeight: 300, color: color || 'var(--gold)', lineHeight: 1.1 }}>{value}</div>
+      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 7 }}>{sub}</div>
     </div>
   );
 }
 
 function PageHeader({ title, sub, action }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
       <div>
-        <h2 style={{ fontFamily: 'Syne, sans-serif', fontSize: 22, fontWeight: 800, letterSpacing: -0.5, marginBottom: 4 }}>{title}</h2>
-        <p style={{ fontSize: 13, color: 'var(--text2)' }}>{sub}</p>
+        <h2 style={{ fontFamily: 'Noto Serif, serif', fontSize: 24, fontWeight: 300, letterSpacing: '-0.3px', marginBottom: 4, fontStyle: 'italic' }}>{title}</h2>
+        <p style={{ fontSize: 12, color: 'var(--text3)', letterSpacing: '0.04em' }}>{sub}</p>
       </div>
       {action}
     </div>
@@ -759,8 +768,8 @@ function PageHeader({ title, sub, action }) {
 
 function FormField({ label, children, full }) {
   return (
-    <div style={{ gridColumn: full ? '1 / -1' : undefined }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 5 }}>{label}</div>
+    <div style={{ gridColumn: full ? '1 / -1' : undefined, marginBottom: 18 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>{label}</div>
       {children}
     </div>
   );
@@ -769,12 +778,13 @@ function FormField({ label, children, full }) {
 function ModalStyle() {
   return (
     <style>{`
-      .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
-      .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
-      .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-      .form-grid input,.form-grid select{width:100%;height:38px;padding:0 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:'Inter',sans-serif}
-      .form-grid select{padding:0 28px 0 10px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a5a78'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
-      .form-grid input:focus,.form-grid select:focus{border-color:var(--accent)}
+      .modal-overlay{position:fixed;inset:0;background:rgba(5,17,11,0.75);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
+      .modal{background:rgba(32,45,38,0.9);backdrop-filter:blur(28px);box-shadow:inset 0 1px 1px rgba(65,72,67,0.3),0 30px 60px rgba(5,17,11,0.6);border-radius:24px;padding:32px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+      .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}
+      .form-grid input,.form-grid select{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(65,72,67,0.5);border-radius:0;color:var(--text);font-size:13px;outline:none;font-family:'Manrope',sans-serif;padding:8px 4px;transition:border-color .2s}
+      .form-grid input::placeholder{color:var(--text3)}
+      .form-grid select{padding:8px 24px 8px 4px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b938c'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 4px center;background-color:transparent}
+      .form-grid input:focus,.form-grid select:focus{border-bottom-color:var(--gold)}
     `}</style>
   );
 }
@@ -786,12 +796,12 @@ function LoadingScreen() {
 function Spinner() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
-      <div style={{ width: 28, height: 28, border: '2px solid var(--border)', borderTopColor: 'var(--accent)', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
+      <div style={{ width: 28, height: 28, border: '2px solid rgba(65,72,67,0.3)', borderTopColor: 'var(--gold)', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }
 
 function Err({ msg }) {
-  return <div style={{ padding: 40, textAlign: 'center', color: 'var(--red)', fontSize: 14 }}>{msg}</div>;
+  return <div style={{ padding: 40, textAlign: 'center', color: 'var(--error)', fontSize: 14 }}>{msg}</div>;
 }
