@@ -110,6 +110,22 @@ export default async function handler(req, res) {
       )
     `;
 
+    await sql`
+      CREATE TABLE IF NOT EXISTS site_pages (
+        id              SERIAL PRIMARY KEY,
+        title           VARCHAR(255) NOT NULL,
+        slug            VARCHAR(255) UNIQUE NOT NULL,
+        seo_title       VARCHAR(255) DEFAULT '',
+        seo_description TEXT DEFAULT '',
+        content         TEXT DEFAULT '',
+        is_active       BOOLEAN DEFAULT true,
+        is_core         BOOLEAN DEFAULT false,
+        sort_order      INTEGER DEFAULT 100,
+        created_at      TIMESTAMPTZ DEFAULT NOW(),
+        updated_at      TIMESTAMPTZ DEFAULT NOW()
+      )
+    `;
+
     // 2. Create indexes
     await sql`CREATE INDEX IF NOT EXISTS idx_products_category  ON products(category)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_products_price     ON products(price)`;
@@ -117,8 +133,35 @@ export default async function handler(req, res) {
     await sql`CREATE INDEX IF NOT EXISTS idx_orders_status      ON orders(status)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_orders_created     ON orders(created_at DESC)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_order_items_ref    ON order_items(order_ref)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_site_pages_slug    ON site_pages(slug)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_site_pages_active  ON site_pages(is_active)`;
 
-    // 3. Seed products (INSERT ... ON CONFLICT DO NOTHING = safe to re-run)
+    // 3a. Seed core site pages
+    const corePages = [
+      { title: 'Home',                 slug: 'home',                 seo_title: 'Home',                 sort_order: 1,  is_core: true },
+      { title: 'About Us',             slug: 'about-us',             seo_title: 'About Us',             sort_order: 2,  is_core: true },
+      { title: 'Contact Us',           slug: 'contact-us',           seo_title: 'Contact Us',           sort_order: 3,  is_core: true },
+      { title: 'Terms And Condition',  slug: 'terms-and-condition',  seo_title: 'Terms And Condition',  sort_order: 4,  is_core: true },
+      { title: "FAQ's",                slug: 'faqs',                 seo_title: "FAQ's",                sort_order: 5,  is_core: true },
+      { title: 'Why Choose Us',        slug: 'why-choose-us',        seo_title: 'Why Choose Us',        sort_order: 6,  is_core: false },
+      { title: 'Blog',                 slug: 'blog',                 seo_title: 'Blog',                 sort_order: 7,  is_core: false },
+      { title: 'Product',              slug: 'product',              seo_title: 'Product',              sort_order: 8,  is_core: false },
+      { title: 'AyuAahar',             slug: 'ayuaahar',             seo_title: 'AyuAahar',             sort_order: 9,  is_core: false },
+      { title: 'Offer Zone',           slug: 'offer-zone',           seo_title: 'Offer Zone',           sort_order: 10, is_core: false },
+      { title: 'Cosmetics',            slug: 'cosmetics',            seo_title: 'Cosmetics',            sort_order: 11, is_core: false },
+    ];
+    let pagesInserted = 0;
+    for (const pg of corePages) {
+      const r = await sql`
+        INSERT INTO site_pages (title, slug, seo_title, seo_description, content, is_active, is_core, sort_order)
+        VALUES (${pg.title}, ${pg.slug}, ${pg.seo_title}, ${''}, ${''}, ${true}, ${pg.is_core}, ${pg.sort_order})
+        ON CONFLICT (slug) DO NOTHING
+        RETURNING id
+      `;
+      if (r.length > 0) pagesInserted++;
+    }
+
+    // 3b. Seed products (INSERT ... ON CONFLICT DO NOTHING = safe to re-run)
     const products = generateProducts();
     let inserted = 0;
     for (const p of products) {
@@ -134,8 +177,9 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       message: 'Database setup complete',
-      tables: ['products', 'orders', 'order_items'],
+      tables: ['products', 'orders', 'order_items', 'site_pages'],
       productsInserted: inserted,
+      pagesInserted,
       totalProducts: products.length,
     });
   } catch (err) {

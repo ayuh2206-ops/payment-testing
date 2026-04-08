@@ -32,6 +32,7 @@ const NAV_ITEMS = [
   { id: 'analytics', label: 'Analytics',  icon: '📊' },
   { id: 'orders',    label: 'Orders',     icon: '📋' },
   { id: 'products',  label: 'Products',   icon: '🛍️' },
+  { id: 'pages',     label: 'Pages',      icon: '📄' },
   { id: 'setup',     label: 'DB Setup',   icon: '🔧' },
 ];
 
@@ -152,6 +153,7 @@ export default function AdminDashboard() {
             {tab === 'analytics' && <AnalyticsPanel />}
             {tab === 'orders'    && <OrdersPanel />}
             {tab === 'products'  && <ProductsPanel />}
+            {tab === 'pages'     && <PagesPanel />}
             {tab === 'setup'     && <SetupPanel />}
           </div>
         </main>
@@ -747,6 +749,582 @@ function ProductsPanel() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Pages Panel — Storefront Content Management (Domain 3, Module A)
+// Clean borderless list → "Zen Mode" full-screen editor
+// Core pages (Home, About, Contact, FAQ, Terms) cannot be deleted.
+// ─────────────────────────────────────────────────────────────────────────────
+function PagesPanel() {
+  const [pages, setPages]         = useState([]);
+  const [total, setTotal]         = useState(0);
+  const [loading, setLoading]     = useState(true);
+  const [search, setSearch]       = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [editing, setEditing]     = useState(null);   // page object for Zen editor
+  const [showAdd, setShowAdd]     = useState(false);
+  const [deleting, setDeleting]   = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const qs   = new URLSearchParams({ search, status: statusFilter, limit: 50 });
+      const data = await fetch(`/api/admin/pages?${qs}`).then(r => r.json());
+      setPages(data.pages || []); setTotal(data.total || 0);
+    } catch { setPages([]); }
+    finally { setLoading(false); }
+  }, [search, statusFilter]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function openEditor(pg) {
+    // Fetch full page content
+    try {
+      const data = await fetch(`/api/admin/pages/${pg.id}`).then(r => r.json());
+      setEditing(data.page);
+    } catch { setEditing(pg); }
+  }
+
+  async function savePage(id, updates) {
+    const res = await fetch(`/api/admin/pages/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    if (res.ok) { setEditing(null); load(); }
+    else { const e = await res.json(); alert(e.error || 'Save failed'); }
+  }
+
+  async function createPage(data) {
+    const res = await fetch('/api/admin/pages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) { setShowAdd(false); load(); }
+    else { const e = await res.json(); alert(e.error || 'Create failed'); }
+  }
+
+  async function toggleActive(pg) {
+    await fetch(`/api/admin/pages/${pg.id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: !pg.is_active }),
+    });
+    load();
+  }
+
+  async function deletePage(pg) {
+    if (pg.is_core) { alert(`"${pg.title}" is a core page and cannot be deleted.`); return; }
+    const res = await fetch(`/api/admin/pages/${pg.id}`, { method: 'DELETE' });
+    if (res.ok) { setDeleting(null); load(); }
+    else { const e = await res.json(); alert(e.error || 'Delete failed'); setDeleting(null); }
+  }
+
+  // ── Zen Mode Editor overlay ──
+  if (editing) {
+    return <ZenModeEditor page={editing} onSave={(updates) => savePage(editing.id, updates)} onClose={() => setEditing(null)} />;
+  }
+
+  return (
+    <div>
+      <header style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom: 40 }}>
+        <div>
+          <h2 style={{ fontFamily:'Noto Serif,serif', fontSize: 38, fontWeight: 300, letterSpacing:'-0.5px', color:'#d7e6dc', marginBottom: 6 }}>Pages</h2>
+          <p style={{ color:'#c1c8c1', fontSize: 14, opacity: 0.8 }}>{total} pages managing your storefront</p>
+        </div>
+        <button onClick={() => setShowAdd(true)} className="stitch-gold" style={{
+          color:'#3c2f00', padding:'12px 28px', borderRadius:999, border:'none',
+          fontFamily:'Manrope,sans-serif', fontSize:12, fontWeight:800,
+          textTransform:'uppercase', letterSpacing:'0.14em', cursor:'pointer',
+          display:'flex', alignItems:'center', gap: 8,
+          boxShadow:'0 8px 24px rgba(233,195,73,0.2)', transition:'transform 0.2s, box-shadow 0.2s',
+        }}>
+          <span>+</span> New Page
+        </button>
+      </header>
+
+      {/* Add page modal */}
+      {showAdd && <PageAddModal onSave={createPage} onClose={() => setShowAdd(false)} />}
+
+      {/* Delete confirmation */}
+      {deleting && (
+        <div style={{
+          position:'fixed', inset:0, zIndex:999, background:'rgba(5,17,11,0.75)',
+          backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)',
+          display:'flex', alignItems:'center', justifyContent:'center', padding:20,
+        }}>
+          <div style={{
+            background:'rgba(42,56,49,0.92)', backdropFilter:'blur(28px)',
+            border:'1px solid rgba(65,72,67,0.3)', borderTop:'2px solid rgba(255,180,171,0.4)',
+            borderRadius:18, padding:36, width:'100%', maxWidth:400,
+            boxShadow:'0 30px 60px rgba(5,17,11,0.6)',
+          }}>
+            <h3 style={{ fontFamily:'Noto Serif,serif', fontSize:20, fontWeight:400, color:'#d7e6dc', marginBottom:16 }}>
+              Delete "{deleting.title}"?
+            </h3>
+            <p style={{ fontSize:13, color:'#c1c8c1', lineHeight:1.7, marginBottom:24 }}>
+              This will permanently remove this page. This action cannot be undone.
+            </p>
+            <div style={{ display:'flex', gap:12 }}>
+              <button onClick={() => deletePage(deleting)} style={{
+                flex:1, height:44, borderRadius:999, border:'1px solid rgba(255,180,171,0.4)',
+                background:'rgba(255,180,171,0.1)', color:'#ffb4ab',
+                fontSize:12, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.12em',
+                cursor:'pointer', fontFamily:'Manrope,sans-serif',
+              }}>Delete</button>
+              <button onClick={() => setDeleting(null)} style={{
+                flex:1, height:44, borderRadius:999, border:'1px solid rgba(65,72,67,0.45)',
+                background:'none', color:'#c1c8c1', fontSize:12, fontWeight:700,
+                textTransform:'uppercase', letterSpacing:'0.1em', cursor:'pointer',
+                fontFamily:'Manrope,sans-serif',
+              }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div style={{ display:'flex', gap:10, marginBottom:20, flexWrap:'wrap' }}>
+        <div style={{ position:'relative', flex:1, minWidth:220 }}>
+          <svg style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'#8b938c', pointerEvents:'none' }} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14"><circle cx="7" cy="7" r="5"/><path d="m11 11 3 3"/></svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search pages…" style={{
+            width:'100%', height:40, paddingLeft:36, paddingRight:14,
+            background:'rgba(42,56,49,0.5)', border:'1px solid rgba(65,72,67,0.3)',
+            borderRadius:999, color:'#d7e6dc', fontSize:13, outline:'none',
+            fontFamily:'Manrope,sans-serif',
+          }}/>
+        </div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{
+          height:40, padding:'0 32px 0 16px', background:'rgba(42,56,49,0.5)',
+          border:'1px solid rgba(65,72,67,0.3)', borderRadius:999, color:'#d7e6dc',
+          fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em',
+          outline:'none', appearance:'none', cursor:'pointer',
+          backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238b938c'/%3E%3C/svg%3E")`,
+          backgroundRepeat:'no-repeat', backgroundPosition:'right 12px center', fontFamily:'Manrope,sans-serif',
+        }}>
+          <option value="">All Pages</option>
+          <option value="active">Active</option>
+          <option value="draft">Draft</option>
+        </select>
+      </div>
+
+      {/* Pages list — clean borderless cards per spec */}
+      <div style={{ display:'flex', flexDirection:'column', gap: 6 }}>
+        {loading ? <Loader /> : pages.length === 0 ? (
+          <div style={{ padding:48, textAlign:'center', color:'#8b938c', fontSize:14, fontStyle:'italic' }}>
+            No pages found. Create your first page to get started.
+          </div>
+        ) : pages.map(pg => (
+          <div key={pg.id} className="stitch-row" style={{
+            display:'flex', alignItems:'center', gap:16, padding:'16px 24px',
+            borderRadius:12, cursor:'pointer', transition:'all 0.2s',
+            background:'rgba(42,56,49,0.25)',
+            border:'1px solid rgba(65,72,67,0.12)',
+            opacity: pg.is_active ? 1 : 0.5,
+          }} onClick={() => openEditor(pg)}>
+            {/* Icon */}
+            <div style={{
+              width:42, height:42, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center',
+              background: pg.is_core
+                ? 'linear-gradient(135deg, rgba(233,195,73,0.15), rgba(173,139,14,0.08))'
+                : 'rgba(65,72,67,0.25)',
+              border: pg.is_core ? '1px solid rgba(233,195,73,0.2)' : '1px solid rgba(65,72,67,0.15)',
+              flexShrink:0,
+            }}>
+              <span style={{ fontSize:18 }}>{pg.is_core ? '🏛️' : '📝'}</span>
+            </div>
+
+            {/* Title + slug */}
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontSize:14, fontWeight:600, color:'#d7e6dc' }}>{pg.title}</span>
+                {pg.is_core && (
+                  <span style={{
+                    fontSize:8, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.12em',
+                    background:'rgba(233,195,73,0.12)', color:'#e9c349', border:'1px solid rgba(233,195,73,0.2)',
+                    padding:'2px 8px', borderRadius:999,
+                  }}>Core</span>
+                )}
+              </div>
+              <span style={{ fontSize:11, color:'#8b938c', fontFamily:'monospace' }}>/{pg.slug}</span>
+            </div>
+
+            {/* SEO title */}
+            <div style={{ width:160, flexShrink:0, display:'flex', flexDirection:'column', alignItems:'flex-start' }}>
+              <span style={{ fontSize:9, textTransform:'uppercase', letterSpacing:'0.12em', color:'#8b938c', fontWeight:700, marginBottom:2 }}>SEO Title</span>
+              <span style={{ fontSize:11, color:'#c1c8c1', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'100%' }}>{pg.seo_title || '—'}</span>
+            </div>
+
+            {/* Status */}
+            <div style={{ width:80, flexShrink:0, textAlign:'center' }}>
+              <span style={{
+                padding:'4px 12px', borderRadius:999, fontSize:10, fontWeight:700,
+                textTransform:'uppercase', letterSpacing:'0.08em',
+                background: pg.is_active ? 'rgba(158,209,189,0.08)' : 'rgba(193,200,193,0.08)',
+                color: pg.is_active ? '#9ed1bd' : '#8b938c',
+                border: `1px solid ${pg.is_active ? 'rgba(158,209,189,0.25)' : 'rgba(193,200,193,0.15)'}`,
+              }}>{pg.is_active ? 'Active' : 'Draft'}</span>
+            </div>
+
+            {/* Last updated */}
+            <div style={{ width:100, flexShrink:0, textAlign:'right' }}>
+              <span style={{ fontSize:10, color:'#8b938c' }}>
+                {pg.updated_at ? new Date(pg.updated_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'2-digit' }) : '—'}
+              </span>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display:'flex', gap:6, flexShrink:0 }} onClick={e => e.stopPropagation()}>
+              <button onClick={() => openEditor(pg)} title="Edit" style={{
+                display:'inline-flex', alignItems:'center', gap:4,
+                padding:'6px 12px', borderRadius:999,
+                border:'1px solid rgba(158,209,189,0.3)', background:'rgba(158,209,189,0.08)',
+                color:'#9ed1bd', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em',
+                cursor:'pointer', fontFamily:'Manrope,sans-serif', transition:'all 0.15s',
+              }}>
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" width="10" height="10"><path d="M9.5 2.5l2 2-7 7H2.5v-2l7-7z"/></svg>
+                Edit
+              </button>
+              <button onClick={() => toggleActive(pg)} title={pg.is_active ? 'Set Draft' : 'Publish'} style={{
+                display:'inline-flex', alignItems:'center', gap:4,
+                padding:'6px 12px', borderRadius:999,
+                border:`1px solid ${pg.is_active ? 'rgba(193,200,193,0.3)' : 'rgba(233,195,73,0.3)'}`,
+                background: pg.is_active ? 'rgba(193,200,193,0.08)' : 'rgba(233,195,73,0.08)',
+                color: pg.is_active ? '#c1c8c1' : '#e9c349',
+                fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em',
+                cursor:'pointer', fontFamily:'Manrope,sans-serif', transition:'all 0.15s',
+              }}>
+                {pg.is_active ? 'Draft' : 'Publish'}
+              </button>
+              {!pg.is_core && (
+                <button onClick={() => setDeleting(pg)} title="Delete" style={{
+                  display:'inline-flex', alignItems:'center', justifyContent:'center',
+                  width:32, height:32, borderRadius:999,
+                  border:'1px solid rgba(255,180,171,0.2)', background:'rgba(255,180,171,0.06)',
+                  color:'#ffb4ab', cursor:'pointer', transition:'all 0.15s',
+                }}>
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" width="12" height="12">
+                    <path d="M3 4h8l-.7 8.1a1 1 0 01-1 .9H4.7a1 1 0 01-1-.9L3 4z"/>
+                    <path d="M5.5 6.5v4M8.5 6.5v4M2 4h10M5 4V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V4"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page Add Modal — quick create with title, slug, SEO fields
+// ─────────────────────────────────────────────────────────────────────────────
+function PageAddModal({ onSave, onClose }) {
+  const [form, setForm] = useState({ title: '', slug: '', seo_title: '', seo_description: '' });
+  const up = k => e => {
+    const v = e.target.value;
+    setForm(f => {
+      const next = { ...f, [k]: v };
+      // Auto-generate slug from title
+      if (k === 'title') {
+        next.slug = v.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+        if (!f.seo_title) next.seo_title = v;
+      }
+      return next;
+    });
+  };
+
+  const inputStyle = {
+    width:'100%', background:'transparent', border:'none',
+    borderBottom:'1px solid rgba(65,72,67,0.45)', borderRadius:0,
+    color:'#d7e6dc', fontSize:14, padding:'10px 4px',
+    outline:'none', fontFamily:'Manrope,sans-serif', transition:'border-color 0.2s',
+  };
+  const labelStyle = {
+    display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase',
+    letterSpacing:'0.15em', color:'#8b938c', marginBottom:6,
+  };
+
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:999, background:'rgba(5,17,11,0.75)',
+      backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)',
+      display:'flex', alignItems:'center', justifyContent:'center', padding:20,
+    }}>
+      <div style={{
+        background:'rgba(42,56,49,0.88)', backdropFilter:'blur(28px)',
+        border:'1px solid rgba(65,72,67,0.3)', borderTop:'2px solid rgba(233,195,73,0.4)',
+        borderRadius:18, padding:36, width:'100%', maxWidth:520, maxHeight:'90vh', overflowY:'auto',
+        boxShadow:'0 30px 60px rgba(5,17,11,0.6)',
+      }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:28 }}>
+          <div className="stitch-gold" style={{ width:40, height:40, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', color:'#3c2f00', fontSize:18 }}>📄</div>
+          <h3 style={{ fontFamily:'Noto Serif,serif', fontSize:20, fontWeight:400, fontStyle:'italic', color:'#d7e6dc' }}>New Page</h3>
+        </div>
+
+        <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+          <div>
+            <label style={labelStyle}>Page Title</label>
+            <input value={form.title} onChange={up('title')} placeholder="e.g. Privacy Policy" style={inputStyle}/>
+          </div>
+          <div>
+            <label style={labelStyle}>URL Slug</label>
+            <div style={{ display:'flex', alignItems:'center' }}>
+              <span style={{ color:'#8b938c', fontSize:13, marginRight:2 }}>/</span>
+              <input value={form.slug} onChange={up('slug')} placeholder="privacy-policy" style={inputStyle}/>
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>SEO Title</label>
+            <input value={form.seo_title} onChange={up('seo_title')} placeholder="Same as page title if empty" style={inputStyle}/>
+          </div>
+          <div>
+            <label style={labelStyle}>SEO Description</label>
+            <textarea value={form.seo_description} onChange={up('seo_description')} placeholder="Brief description for search engines…" rows={3} style={{...inputStyle, resize:'vertical', minHeight:60, borderBottom:'1px solid rgba(65,72,67,0.45)'}}/>
+          </div>
+        </div>
+
+        <div style={{ display:'flex', gap:12, marginTop:28 }}>
+          <button onClick={() => { if(form.title && form.slug) onSave(form); }} className={form.title && form.slug ? "stitch-gold" : ""} style={{
+            flex:1, height:48, borderRadius:999, border:'none',
+            background: form.title && form.slug ? undefined : 'rgba(42,56,49,0.5)',
+            color: form.title && form.slug ? '#3c2f00' : '#8b938c',
+            fontSize:12, fontWeight:800, textTransform:'uppercase',
+            letterSpacing:'0.14em', cursor: form.title && form.slug ? 'pointer' : 'not-allowed',
+            fontFamily:'Manrope,sans-serif',
+          }}>Create Page</button>
+          <button onClick={onClose} style={{
+            flex:1, height:48, borderRadius:999, border:'1px solid rgba(65,72,67,0.45)',
+            background:'none', color:'#c1c8c1', fontSize:12, fontWeight:700,
+            textTransform:'uppercase', letterSpacing:'0.1em', cursor:'pointer',
+            fontFamily:'Manrope,sans-serif',
+          }}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Zen Mode Editor — full-screen, clean canvas for rich content editing
+// "The sidebar disappears, giving the admin a full-screen, clean white canvas
+//  to write the brand story and insert images, exactly like writing a Medium article."
+// Adapted to Stitch dark aesthetic.
+// ─────────────────────────────────────────────────────────────────────────────
+function ZenModeEditor({ page, onSave, onClose }) {
+  const [form, setForm] = useState({
+    title:           page.title || '',
+    slug:            page.slug || '',
+    seo_title:       page.seo_title || '',
+    seo_description: page.seo_description || '',
+    content:         page.content || '',
+    is_active:       page.is_active ?? true,
+  });
+  const [showSeo, setShowSeo] = useState(false);
+  const [saving, setSaving]   = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  const up = k => e => {
+    setForm(f => ({ ...f, [k]: e.target.value }));
+    setHasChanges(true);
+  };
+
+  async function handleSave() {
+    setSaving(true);
+    await onSave(form);
+    setSaving(false);
+    setHasChanges(false);
+  }
+
+  // Toolbar commands for basic rich-text formatting
+  const toolbarBtns = [
+    { label: 'B', cmd: '**', title: 'Bold' },
+    { label: 'I', cmd: '_', title: 'Italic' },
+    { label: 'H2', cmd: '\n## ', title: 'Heading 2', prefix: true },
+    { label: 'H3', cmd: '\n### ', title: 'Heading 3', prefix: true },
+    { label: '—', cmd: '\n---\n', title: 'Divider', prefix: true },
+    { label: '•', cmd: '\n- ', title: 'List', prefix: true },
+    { label: '🔗', cmd: '[link text](url)', title: 'Link', insert: true },
+    { label: '🖼', cmd: '![alt](image-url)', title: 'Image', insert: true },
+  ];
+
+  function applyFormat(btn) {
+    const ta = document.getElementById('zen-content');
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const text = form.content;
+    const selected = text.substring(start, end);
+    let newText;
+    let cursorPos;
+
+    if (btn.insert || btn.prefix) {
+      newText = text.substring(0, start) + btn.cmd + text.substring(end);
+      cursorPos = start + btn.cmd.length;
+    } else {
+      newText = text.substring(0, start) + btn.cmd + selected + btn.cmd + text.substring(end);
+      cursorPos = end + btn.cmd.length * 2;
+    }
+    setForm(f => ({ ...f, content: newText }));
+    setHasChanges(true);
+    setTimeout(() => { ta.focus(); ta.selectionStart = ta.selectionEnd = cursorPos; }, 0);
+  }
+
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:1000,
+      background:'#070f0b',
+      display:'flex', flexDirection:'column',
+      fontFamily:'Manrope,sans-serif',
+    }}>
+      {/* ── Top bar ── */}
+      <div style={{
+        display:'flex', alignItems:'center', justifyContent:'space-between',
+        padding:'12px 28px',
+        background:'rgba(42,56,49,0.5)',
+        backdropFilter:'blur(24px)',
+        borderBottom:'1px solid rgba(65,72,67,0.2)',
+        flexShrink:0,
+      }}>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <button onClick={onClose} style={{
+            display:'flex', alignItems:'center', gap:6,
+            padding:'8px 16px', borderRadius:999,
+            border:'1px solid rgba(65,72,67,0.4)', background:'none',
+            color:'#c1c8c1', fontSize:12, fontWeight:600, cursor:'pointer',
+            fontFamily:'Manrope,sans-serif', transition:'all 0.15s',
+          }}>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14"><path d="M10 3L5 8l5 5"/></svg>
+            Back to Pages
+          </button>
+          {page.is_core && (
+            <span style={{
+              fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.12em',
+              background:'rgba(233,195,73,0.12)', color:'#e9c349', border:'1px solid rgba(233,195,73,0.2)',
+              padding:'4px 10px', borderRadius:999,
+            }}>Core Page</span>
+          )}
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          {hasChanges && <span style={{ fontSize:10, color:'#e9c349', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.08em' }}>Unsaved changes</span>}
+          <button onClick={() => setShowSeo(!showSeo)} style={{
+            padding:'8px 16px', borderRadius:999,
+            border:'1px solid rgba(65,72,67,0.4)', background: showSeo ? 'rgba(158,209,189,0.08)' : 'none',
+            color: showSeo ? '#9ed1bd' : '#c1c8c1', fontSize:11, fontWeight:700,
+            textTransform:'uppercase', letterSpacing:'0.08em', cursor:'pointer',
+            fontFamily:'Manrope,sans-serif', transition:'all 0.15s',
+          }}>
+            <span style={{ marginRight:6 }}>⚙</span> SEO
+          </button>
+          <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, color:'#c1c8c1', cursor:'pointer', fontWeight:600 }}>
+            <input type="checkbox" checked={form.is_active} onChange={e => { setForm(f=>({...f,is_active:e.target.checked})); setHasChanges(true); }}
+              style={{ accentColor:'#9ed1bd', width:14, height:14, cursor:'pointer' }} />
+            Published
+          </label>
+          <button onClick={handleSave} disabled={saving} className={!saving ? "stitch-gold" : ""} style={{
+            padding:'8px 24px', borderRadius:999, border:'none',
+            background: saving ? 'rgba(42,56,49,0.5)' : undefined,
+            color: saving ? '#8b938c' : '#3c2f00', fontSize:11, fontWeight:800,
+            textTransform:'uppercase', letterSpacing:'0.12em',
+            cursor: saving ? 'not-allowed' : 'pointer', fontFamily:'Manrope,sans-serif',
+          }}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+
+      {/* ── SEO drawer (slide down) ── */}
+      {showSeo && (
+        <div style={{
+          padding:'20px 28px', background:'rgba(42,56,49,0.35)',
+          borderBottom:'1px solid rgba(65,72,67,0.15)',
+          display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:20, flexShrink:0,
+        }}>
+          {[
+            { label:'URL Slug', key:'slug', ph:'/about-us' },
+            { label:'SEO Title', key:'seo_title', ph:'Page title for search engines' },
+            { label:'SEO Description', key:'seo_description', ph:'Brief description…' },
+          ].map(f => (
+            <div key={f.key}>
+              <label style={{ display:'block', fontSize:9, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.14em', color:'#8b938c', marginBottom:6 }}>{f.label}</label>
+              <input value={form[f.key]} onChange={up(f.key)} placeholder={f.ph} style={{
+                width:'100%', background:'transparent', border:'none', borderBottom:'1px solid rgba(65,72,67,0.4)',
+                borderRadius:0, color:'#d7e6dc', fontSize:13, padding:'8px 4px', outline:'none',
+                fontFamily:'Manrope,sans-serif',
+              }}/>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Writing canvas ── */}
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflowY:'auto' }}>
+        {/* Page title */}
+        <div style={{ maxWidth:760, width:'100%', margin:'0 auto', padding:'48px 32px 0' }}>
+          <input
+            value={form.title}
+            onChange={up('title')}
+            placeholder="Page title…"
+            style={{
+              width:'100%', background:'transparent', border:'none', outline:'none',
+              fontFamily:'Noto Serif,serif', fontSize:40, fontWeight:300, letterSpacing:'-0.5px',
+              color:'#d7e6dc', marginBottom:12,
+            }}
+          />
+          <div style={{ height:2, background:'linear-gradient(90deg, rgba(233,195,73,0.4), transparent 60%)', borderRadius:1, marginBottom:24 }} />
+        </div>
+
+        {/* Markdown toolbar */}
+        <div style={{
+          maxWidth:760, width:'100%', margin:'0 auto', padding:'0 32px',
+          display:'flex', gap:4, marginBottom:16, flexWrap:'wrap',
+        }}>
+          {toolbarBtns.map((btn, i) => (
+            <button key={i} onClick={() => applyFormat(btn)} title={btn.title} style={{
+              padding:'5px 12px', borderRadius:8,
+              border:'1px solid rgba(65,72,67,0.3)', background:'rgba(42,56,49,0.3)',
+              color:'#c1c8c1', fontSize:12, fontWeight: btn.label === 'B' ? 800 : btn.label === 'I' ? 400 : 600,
+              fontStyle: btn.label === 'I' ? 'italic' : 'normal',
+              cursor:'pointer', fontFamily: btn.label.startsWith('H') ? 'Noto Serif,serif' : 'Manrope,sans-serif',
+              transition:'all 0.15s',
+            }}>
+              {btn.label}
+            </button>
+          ))}
+          <span style={{ fontSize:9, color:'#8b938c', alignSelf:'center', marginLeft:8, fontStyle:'italic' }}>Markdown supported</span>
+        </div>
+
+        {/* Content area */}
+        <div style={{ maxWidth:760, width:'100%', margin:'0 auto', padding:'0 32px 80px', flex:1 }}>
+          <textarea
+            id="zen-content"
+            value={form.content}
+            onChange={up('content')}
+            placeholder="Start writing your page content here…
+
+Use Markdown for formatting:
+## Headings
+**Bold text** and _italic text_
+- List items
+[Link text](https://example.com)
+![Image alt](image-url)
+---
+Horizontal divider"
+            style={{
+              width:'100%', minHeight:500, height:'100%', background:'transparent',
+              border:'none', outline:'none', resize:'none',
+              fontFamily:'Manrope,sans-serif', fontSize:15, lineHeight:1.9,
+              color:'#c1c8c1', letterSpacing:'0.01em',
+            }}
+          />
+        </div>
+      </div>
+
+      <style jsx global>{`
+        .stitch-gold { background: linear-gradient(135deg, #e9c349 0%, #ad8b0e 100%); }
+      `}</style>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Setup Panel
 // ─────────────────────────────────────────────────────────────────────────────
 function SetupPanel() {
@@ -773,7 +1351,7 @@ function SetupPanel() {
       {/* from Stitch: glass-panel rounded-xl p-8 border-t-2 border-t-primary/40 */}
       <div className="stitch-glass" style={{ borderRadius:14, padding:'32px 36px', maxWidth:560, borderTop:'2px solid rgba(233,195,73,0.3)' }}>
         <p style={{ fontSize:13, color:'#c1c8c1', lineHeight:1.85, marginBottom:24 }}>
-          Run once after deploying. Creates <code style={{fontFamily:'monospace',fontSize:12,background:'rgba(65,72,67,0.4)',padding:'2px 6px',borderRadius:4,color:'#9ed1bd'}}>products</code>, <code style={{fontFamily:'monospace',fontSize:12,background:'rgba(65,72,67,0.4)',padding:'2px 6px',borderRadius:4,color:'#9ed1bd'}}>orders</code>, and <code style={{fontFamily:'monospace',fontSize:12,background:'rgba(65,72,67,0.4)',padding:'2px 6px',borderRadius:4,color:'#9ed1bd'}}>order_items</code> tables in Neon PostgreSQL, creates all indexes, and seeds 240 products.
+          Run once after deploying. Creates <code style={{fontFamily:'monospace',fontSize:12,background:'rgba(65,72,67,0.4)',padding:'2px 6px',borderRadius:4,color:'#9ed1bd'}}>products</code>, <code style={{fontFamily:'monospace',fontSize:12,background:'rgba(65,72,67,0.4)',padding:'2px 6px',borderRadius:4,color:'#9ed1bd'}}>orders</code>, <code style={{fontFamily:'monospace',fontSize:12,background:'rgba(65,72,67,0.4)',padding:'2px 6px',borderRadius:4,color:'#9ed1bd'}}>order_items</code>, and <code style={{fontFamily:'monospace',fontSize:12,background:'rgba(65,72,67,0.4)',padding:'2px 6px',borderRadius:4,color:'#9ed1bd'}}>site_pages</code> tables in Neon PostgreSQL, creates all indexes, and seeds 240 products + 11 core pages.
         </p>
         <div style={{ display:'flex', gap:10, marginBottom:20 }}>
           {/* Input — from Stitch: bg-transparent border-b border-outline-variant/40 focus:border-primary */}
@@ -796,7 +1374,7 @@ function SetupPanel() {
             color: result.ok ? '#9ed1bd' : '#ffb4ab',
           }}>
             {result.ok
-              ? <>✓ Setup complete — {result.data.productsInserted} products inserted. Tables: {result.data.tables?.join(', ')}</>
+              ? <>✓ Setup complete — {result.data.productsInserted} products, {result.data.pagesInserted || 0} pages inserted. Tables: {result.data.tables?.join(', ')}</>
               : <>✗ Error: {result.data.error}</>}
           </div>
         )}
