@@ -1,899 +1,533 @@
 // pages/index.jsx
-// Matches Stitch storefront_catalog/code.html structure exactly:
-//
-// 1. HERO — min-h-screen, 7/5 col grid, large serif headline, two CTAs, right image panel
-//    with floating glass "Editor's Choice" card
-// 2. CATALOG — 12-col grid: 3-col sticky sidebar + 9-col product grid
-// 3. SIDEBAR — glass panel: Categories (checkboxes), Price Range (slider), Sort pills
-// 4. PRODUCT GRID — aspect-square cards, rounded-[2rem] container, rounded-2xl image
-// 5. NEWSLETTER — "Seasonal Rituals are Blooming" CTA section (bg-surface-container-lowest)
-// 6. FOOTER — 3-col: brand + links + legal (matches Stitch footer exactly)
-
-import { useState, useEffect, useCallback } from 'react';
+// ═══ SB Ayurved — Storefront Home ═══
+// Faithfully converted from Stitch storefront_home/code.html
+// Design: Botanical Liquid Glass — warm white canvas, green gradient bleeds,
+// glassmorphic components with directional light borders, gold accents, depth shadows
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Navbar from '@/components/Navbar';
+import Link from 'next/link';
 import { useCart } from '@/components/CartContext';
 
-const CATEGORIES = [
-  { id: 'audio',      label: 'Audio' },
-  { id: 'keyboards',  label: 'Keyboards' },
-  { id: 'displays',   label: 'Displays' },
-  { id: 'storage',    label: 'Storage' },
-  { id: 'cables',     label: 'Cables & Hubs' },
-  { id: 'ergonomics', label: 'Ergonomics' },
-  { id: 'networking', label: 'Networking' },
-  { id: 'cameras',    label: 'Cameras' },
-];
-
-// Category gradient backgrounds for product image areas
-const CAT_GRADIENT = {
-  audio:      'linear-gradient(145deg,#1e0d42,#0d0521)',
-  keyboards:  'linear-gradient(145deg,#0d1e42,#050a1f)',
-  displays:   'linear-gradient(145deg,#0d3028,#061a14)',
-  storage:    'linear-gradient(145deg,#2a1a06,#150d03)',
-  cables:     'linear-gradient(145deg,#0f2218,#09110a)',
-  ergonomics: 'linear-gradient(145deg,#250a2a,#120514)',
-  networking: 'linear-gradient(145deg,#0a1c2a,#050e15)',
-  cameras:    'linear-gradient(145deg,#2a0e0e,#160707)',
+// ─── Design tokens (from Stitch tailwind config) ───
+const C = {
+  bg:          '#FCFCF9',
+  surface:     '#f9f9f6',
+  surfaceLow:  '#f4f4f1',
+  primary:     '#001406',
+  primaryC:    '#102a19',
+  onPrimary:   '#ffffff',
+  onPrimaryC:  '#76937c',
+  primaryFixed: '#cbead0',
+  primaryFixedDim: '#b0ceb5',
+  secondary:   '#546159',
+  secondaryC:  '#d5e3d8',
+  onSurface:   '#1a1c1b',
+  onSurfaceV:  '#424842',
+  outline:     '#737972',
+  outlineV:    '#c2c8c0',
+  tertiary:    '#735c00',
+  tertiaryC:   '#cca830',
+  tertiaryFD:  '#e9c349',
+  gold:        '#D4AF37',
+  emerald50_40:'rgba(236,253,245,0.4)',
 };
 
+// ─── Glass recipes ───
+const glassNav = {
+  background: C.emerald50_40,
+  backdropFilter: 'blur(48px)', WebkitBackdropFilter: 'blur(48px)',
+  borderTop: '1px solid rgba(255,255,255,0.8)',
+  borderLeft: '1px solid rgba(255,255,255,0.8)',
+  borderBottom: '1px solid rgba(255,255,255,0.2)',
+  borderRight: '1px solid rgba(255,255,255,0.2)',
+  boxShadow: '0 40px 80px -10px rgba(16,42,25,0.08)',
+};
+const liquidGlass = {
+  background: 'rgba(255,255,255,0.4)',
+  backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)',
+  borderTop: '1px solid rgba(255,255,255,0.8)',
+  borderLeft: '1px solid rgba(255,255,255,0.8)',
+  borderBottom: '1px solid rgba(255,255,255,0.2)',
+  borderRight: '1px solid rgba(255,255,255,0.2)',
+};
+
+const NAV = [
+  { href: '/',          label: 'Shop',     active: true },
+  { href: '/about',     label: 'Heritage', active: false },
+  { href: '/ayuaahar',  label: 'AyuAahar', active: false },
+  { href: '/blog',      label: 'Journal',  active: false },
+];
+
+const CATEGORIES = [
+  { title: 'Proprietary Special', sub: 'Tested & trusted formulations from senior Vaidyas for everyday Ayurvedic practice.', href: '/' },
+  { title: 'AyuAahar Range', sub: 'Ayurvedic food products — sattu, peya, yush — following Pathya Kalpana dietics.', href: '/ayuaahar' },
+  { title: 'Samaayu Cosmetics', sub: 'Pure botanical beauty — face care, body care, hair care rooted in Ayurvedic wisdom.', href: '/cosmetics' },
+];
+
+const PRODUCTS = [
+  { name: 'BrahmaSattu', sub: 'Vyoshadya Sattu · 250g', price: 298, mrp: 350 },
+  { name: 'BrahmaPeya', sub: 'Raktshali Peya · 100g', price: 128, mrp: 150 },
+  { name: 'Kuberaksha Vati', sub: '30 Tablets', price: 128, mrp: 150 },
+  { name: 'SB-Cid Capsule', sub: '30 Capsules', price: 179, mrp: 210 },
+];
+
 export default function Home() {
-  const { addItem }               = useCart();
-  const [products, setProducts]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [total, setTotal]         = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [search, setSearch]       = useState('');
-  const [activeCats, setActiveCats] = useState([]);   // multi-checkbox
-  const [maxPrice, setMaxPrice]   = useState(13000);
-  const [sort, setSort]           = useState('default');
-  const [page, setPage]           = useState(1);
-  const [email, setEmail]         = useState('');
-  const [notified, setNotified]   = useState(false);
+  const [products, setProducts] = useState([]);
+  const { addToCart } = useCart();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const category = activeCats.length === 1 ? activeCats[0] : '';
-      const qs = new URLSearchParams({ search, category, maxPrice, sort, page, limit: 9 });
-      const d  = await fetch(`/api/products?${qs}`).then(r => r.json());
-      setProducts(d.products || []);
-      setTotal(d.total || 0);
-      setTotalPages(d.totalPages || 1);
-    } catch { setProducts([]); }
-    finally  { setLoading(false); }
-  }, [search, activeCats, maxPrice, sort, page]);
-
-  useEffect(() => { load(); }, [load]);
-  useEffect(() => { setPage(1); }, [search, activeCats, maxPrice, sort]);
-
-  function toggleCat(id) {
-    setActiveCats(c => c.includes(id) ? c.filter(x => x !== id) : [...c, id]);
-  }
-
-  function pageNums() {
-    const a = [], s = Math.max(1, page - 2), e = Math.min(totalPages, page + 2);
-    if (s > 1) { a.push(1); if (s > 2) a.push('...'); }
-    for (let i = s; i <= e; i++) a.push(i);
-    if (e < totalPages) { if (e < totalPages - 1) a.push('...'); a.push(totalPages); }
-    return a;
-  }
+  useEffect(() => {
+    fetch('/api/products?limit=6')
+      .then(r => r.json()).then(d => setProducts(d.products || []))
+      .catch(() => {});
+  }, []);
 
   return (
     <>
       <Head>
-        <title>YourStore — Premium Tech Accessories</title>
-        <meta name="description" content="Shop 240+ premium tech products. Secure checkout via Razorpay." />
+        <title>SB Ayurved — Ancient Wisdom for the Modern Vaidya</title>
+        <meta name="description" content="Quality, effective and affordable Ayurvedic medicines from Shree Brahmachaitanya Ayurved. 160+ classical and proprietary formulations." />
+        <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </Head>
 
-      <div className="page">
-        <Navbar onSearch={q => setSearch(q)} />
+      <div style={{ background: C.bg, color: C.onSurface, minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
 
-        {/* ══════════════════════════════════════════════════════════
-            HERO SECTION
-            Stitch: relative min-h-screen flex items-center pt-24
-            bg-gradient-to-br from-surface to-surface-container-lowest
-            Grid: 7 col headline + 5 col image
-        ══════════════════════════════════════════════════════════ */}
-        <header className="hero">
-          {/* Ambient glows — from Stitch */}
-          <div className="glow-tr" />
-          <div className="glow-bl" />
+        {/* ═══ ATMOSPHERIC BACKGROUND BLOBS ═══ */}
+        <div className="botanical-blob" style={{ top: '-10%', right: '-10%', width: '50vw', height: '50vw', background: `${C.secondaryC}40` }} />
+        <div className="botanical-blob" style={{ bottom: '-20%', left: '-10%', width: '60vw', height: '60vw', background: `${C.primaryFixedDim}30` }} />
 
-          <div className="hero-inner">
-            {/* Left: headline + CTAs — Stitch lg:col-span-7 */}
-            <div className="hero-left">
-              {/* Eyebrow — from Stitch: text-primary tracking-[0.3em] uppercase text-sm */}
-              <span className="hero-eyebrow">✦ Curating Tech Excellence</span>
+        {/* ═══ GLASSMORPHIC NAVBAR ═══ */}
+        {/* From Stitch: fixed top-4 left-1/2 -translate-x-1/2 w-[95%] max-w-7xl rounded-full */}
+        <nav style={{
+          position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)',
+          width: '95%', maxWidth: 1280, zIndex: 50, borderRadius: 9999,
+          ...glassNav,
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '12px 32px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+            <Link href="/">
+              <span style={{ fontFamily: 'Newsreader,serif', fontSize: 24, fontWeight: 700, color: C.tertiary }}>SB Ayurved</span>
+            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 24 }} className="hide-mobile">
+              {NAV.map(n => (
+                <Link key={n.href} href={n.href} style={{
+                  fontFamily: 'Newsreader,serif', letterSpacing: '-0.01em',
+                  color: n.active ? C.tertiary : 'rgba(16,42,25,0.65)',
+                  borderBottom: n.active ? `1px solid ${C.tertiary}` : 'none',
+                  transition: 'color 0.3s',
+                }}>{n.label}</Link>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            {/* Search — from Stitch: bg-white/20 px-4 py-1.5 rounded-full border-white/40 */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'rgba(255,255,255,0.2)', padding: '6px 16px',
+              borderRadius: 9999, border: '1px solid rgba(255,255,255,0.4)',
+            }} className="hide-mobile">
+              <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'rgba(16,42,25,0.4)' }}>search</span>
+              <input placeholder="Search..." style={{
+                background: 'transparent', border: 'none', outline: 'none',
+                fontSize: 13, width: 100, color: C.onSurface,
+              }} />
+            </div>
+            <Link href="/checkout" style={{ color: C.primaryC, display: 'flex' }}>
+              <span className="material-symbols-outlined">shopping_cart</span>
+            </Link>
+            <Link href="/admin" style={{ color: C.primaryC, display: 'flex' }}>
+              <span className="material-symbols-outlined">person</span>
+            </Link>
+          </div>
+        </nav>
 
-              {/* Headline — from Stitch: text-7xl font-headline font-light leading-[1.1] */}
-              <h1 className="hero-h1">
-                The <em>Premium</em><br />Curator
+        {/* ═══ MAIN CONTENT ═══ */}
+        <main style={{ position: 'relative', paddingTop: 128, padding: '128px 16px 0', maxWidth: 1400, margin: '0 auto' }}>
+
+          {/* ── HERO SECTION ── */}
+          {/* From Stitch: relative min-h-[870px] flex items-center mb-32 */}
+          <section style={{ position: 'relative', minHeight: 700, display: 'flex', alignItems: 'center', marginBottom: 128 }}>
+            {/* Right image — from Stitch: absolute right-0 top-0 w-2/3 h-full rounded-[4rem] */}
+            <div style={{
+              position: 'absolute', right: 0, top: 0, width: '65%', height: '100%',
+              overflow: 'hidden', borderRadius: 64,
+            }}>
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: `${C.primaryFixedDim}80`,
+                filter: 'blur(80px)', transform: 'translate(25%, -25%)',
+                borderRadius: '50%',
+              }} />
+              <img
+                src="https://images.unsplash.com/photo-1611241893603-3c228ee0ae6f?w=1200&q=80"
+                alt="Ayurvedic botanicals"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', mixBlendMode: 'multiply', opacity: 0.85, transform: 'scale(1.1)' }}
+              />
+            </div>
+
+            {/* Floating glass card — from Stitch: liquid-glass p-10 md:p-16 rounded-[3rem] shadow-2xl */}
+            <div className="liquid-glass" style={{
+              position: 'relative', zIndex: 10, maxWidth: 600,
+              padding: 'clamp(32px, 5vw, 64px)', borderRadius: 48,
+              boxShadow: '0 25px 50px -12px rgba(16,42,25,0.15)',
+            }}>
+              {/* Gold label — from Stitch: font-body text-[10px] uppercase tracking-[0.3em] text-tertiary */}
+              <span style={{
+                fontFamily: 'Manrope,sans-serif', fontSize: 10, fontWeight: 700,
+                textTransform: 'uppercase', letterSpacing: '0.3em',
+                color: C.tertiary, display: 'block', marginBottom: 24,
+              }}>Shree Brahmachaitanya Ayurved</span>
+
+              {/* Headline — from Stitch: font-newsreader text-5xl md:text-7xl font-bold text-primary-container */}
+              <h1 style={{
+                fontFamily: 'Newsreader,serif', fontSize: 'clamp(36px, 6vw, 68px)',
+                fontWeight: 700, color: C.primaryC,
+                lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 32,
+              }}>
+                Ancient Wisdom, crafted for the{' '}
+                <span style={{ fontStyle: 'italic', fontWeight: 400 }}>Modern Vaidya.</span>
               </h1>
 
-              <p className="hero-p">
-                A collection of high-performance tech accessories, engineered for precision and built for the modern creator. Science meeting the soul of design.
+              {/* Subtitle */}
+              <p style={{
+                fontFamily: 'Manrope,sans-serif', fontSize: 17, color: C.secondary,
+                lineHeight: 1.7, marginBottom: 40, maxWidth: 480,
+              }}>
+                Quality, effective and affordable classical Ayurvedic medicines — 160+ formulations from experienced Vaidyas, for the goodness of society.
               </p>
 
-              {/* CTAs — from Stitch: gold gradient pill + glass ghost pill */}
-              <div className="hero-ctas">
-                <button className="cta-primary" onClick={() => document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' })}>
-                  Explore Collection
-                </button>
-                <button className="cta-ghost">Our Story</button>
+              {/* CTAs — from Stitch: flex flex-wrap gap-4 */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                <Link href="/wellness" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  background: C.primaryC, color: C.onPrimary,
+                  padding: '16px 36px', borderRadius: 9999,
+                  fontFamily: 'Manrope,sans-serif', fontSize: 14, fontWeight: 600,
+                  transition: 'opacity 0.2s',
+                }}>
+                  Shop Collection
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
+                </Link>
+                <Link href="/about" style={{
+                  display: 'inline-flex', alignItems: 'center',
+                  padding: '16px 36px', borderRadius: 9999,
+                  fontFamily: 'Manrope,sans-serif', fontSize: 14, fontWeight: 600,
+                  color: C.primary, border: `1px solid rgba(0,20,6,0.1)`,
+                  transition: 'background 0.2s',
+                }}>
+                  Our Story
+                </Link>
               </div>
             </div>
+          </section>
 
-            {/* Right: featured product panel — Stitch lg:col-span-5 */}
-            <div className="hero-right">
-              {/* from Stitch: aspect-[4/5] rounded-[2rem] overflow-hidden */}
-              <div className="hero-img-wrap">
-                <div className="hero-img-bg">
-                  {/* Gradient backdrop simulating a product image */}
-                  <div className="hero-img-gradient" />
-                  <div className="hero-img-emoji">🎧</div>
-                </div>
-                {/* Overlay gradient — from Stitch: bg-gradient-to-t from-surface/60 to-transparent */}
-                <div className="hero-img-vignette" />
-                {/* Floating glass card — from Stitch: absolute bottom-8 left-8 right-8 glass card */}
-                <div className="hero-card">
-                  <p className="hero-card-label">Editor's Choice</p>
-                  <h3 className="hero-card-title">Sony Elite Headphones Pro</h3>
-                  <p className="hero-card-sub">40hr battery, ANC, IPX5 — premium audio engineering.</p>
-                </div>
+          {/* ── CURATED COLLECTIONS ── */}
+          {/* From Stitch: mb-40, flex justify-between items-end mb-16 */}
+          <section style={{ marginBottom: 160, padding: '0 16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 64, flexWrap: 'wrap', gap: 16 }}>
+              <div>
+                <h2 style={{ fontFamily: 'Newsreader,serif', fontSize: 'clamp(32px, 5vw, 52px)', color: C.primaryC, marginBottom: 16 }}>
+                  Curated <span style={{ fontStyle: 'italic' }}>Collections</span>
+                </h2>
+                <p style={{ fontFamily: 'Manrope,sans-serif', color: C.secondary, maxWidth: 400 }}>
+                  Authentic Ayurvedic formulations for specific wellness goals.
+                </p>
               </div>
+              <Link href="/wellness" style={{
+                color: C.tertiary, fontFamily: 'Manrope,sans-serif', fontWeight: 700,
+                borderBottom: `1px solid ${C.tertiary}`, paddingBottom: 4,
+                transition: 'padding-right 0.3s',
+              }}>View All Collections</Link>
             </div>
-          </div>
-        </header>
 
-        {/* ══════════════════════════════════════════════════════════
-            CATALOG SECTION
-            Stitch: py-24 px-12 max-w-[1920px] grid grid-cols-12 gap-12
-        ══════════════════════════════════════════════════════════ */}
-        <section id="catalog" className="catalog">
+            {/* 3 collection cards — from Stitch: grid grid-cols-3 gap-10 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 40 }}>
+              {CATEGORIES.map((cat, i) => (
+                <Link href={cat.href} key={i} style={{ textDecoration: 'none', position: 'relative', paddingTop: 48 }}>
+                  {/* Ambient glow behind card — from Stitch: absolute top-0 right-8 w-40 h-40 blur-3xl */}
+                  <div style={{
+                    position: 'absolute', top: 0, right: 32, width: 160, height: 160,
+                    background: i === 1 ? 'rgba(255,224,136,0.2)' : 'rgba(203,234,208,0.3)',
+                    borderRadius: '50%', filter: 'blur(48px)',
+                    transition: 'transform 0.7s', zIndex: 0,
+                  }} className="collection-glow" />
 
-          {/* ── SIDEBAR — Stitch: lg:col-span-3 ── */}
-          <aside className="sidebar">
-            {/* from Stitch: sticky top-32 p-8 rounded-3xl bg-surface-container-low glass-glow */}
-            <div className="sidebar-panel">
-
-              {/* Categories — from Stitch: checkboxes */}
-              <div className="sb-section">
-                <h4 className="sb-heading">Categories</h4>
-                <div className="sb-cats">
-                  {CATEGORIES.map(c => (
-                    <label key={c.id} className="sb-cat-item">
-                      <input
-                        type="checkbox"
-                        checked={activeCats.includes(c.id)}
-                        onChange={() => toggleCat(c.id)}
-                        className="sb-checkbox"
-                      />
-                      <span className={`sb-cat-label${activeCats.includes(c.id) ? ' active' : ''}`}>
-                        {c.label}
+                  {/* Card — from Stitch: liquid-glass p-8 rounded-[2.5rem] border border-tertiary/10 */}
+                  <div className="liquid-glass" style={{
+                    padding: 32, borderRadius: 40, position: 'relative',
+                    height: '100%', display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', textAlign: 'center',
+                    border: `1px solid rgba(${i === 1 ? '204,168,48' : '16,42,25'},0.1)`,
+                    boxShadow: '0 20px 40px rgba(16,42,25,0.06)',
+                    transition: 'transform 0.3s, box-shadow 0.3s',
+                    overflow: 'hidden',
+                  }}>
+                    {/* Placeholder image circle */}
+                    <div style={{
+                      width: 120, height: 120, borderRadius: 24, marginBottom: 24, marginTop: -16,
+                      background: i === 0 ? 'linear-gradient(135deg, #cbead0, #b0ceb5)' : i === 1 ? 'linear-gradient(135deg, #ffe088, #e9c349)' : 'linear-gradient(135deg, #d5e3d8, #cbead0)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 12px 24px rgba(16,42,25,0.1)',
+                    }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 40, color: C.primaryC }}>
+                        {i === 0 ? 'science' : i === 1 ? 'restaurant' : 'spa'}
                       </span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+                    </div>
 
-              {/* Price Range — from Stitch: h-1 track with filled portion */}
-              <div className="sb-section">
-                <h4 className="sb-heading">Price Range</h4>
-                <input
-                  type="range" min={699} max={13000} step={100}
-                  value={maxPrice}
-                  onChange={e => setMaxPrice(+e.target.value)}
-                  className="sb-range"
-                />
-                <div className="sb-price-labels">
-                  <span>₹699</span>
-                  <span>₹{maxPrice.toLocaleString('en-IN')}</span>
-                </div>
-              </div>
+                    <h3 style={{ fontFamily: 'Newsreader,serif', fontSize: 22, fontWeight: 700, color: C.primaryC, marginBottom: 8 }}>
+                      {cat.title}
+                    </h3>
+                    <p style={{ fontFamily: 'Manrope,sans-serif', fontSize: 13, color: C.secondary, marginBottom: 24, lineHeight: 1.7, padding: '0 16px' }}>
+                      {cat.sub}
+                    </p>
+                    <span style={{
+                      marginTop: 'auto', color: C.tertiary, fontFamily: 'Manrope,sans-serif',
+                      fontWeight: 700, letterSpacing: '0.15em', fontSize: 11, textTransform: 'uppercase',
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}>
+                      Explore <span className="material-symbols-outlined" style={{ fontSize: 14 }}>trending_flat</span>
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
 
-              {/* Sort — from Stitch: pill buttons like "Skin Concern" chips */}
-              <div className="sb-section">
-                <h4 className="sb-heading">Sort By</h4>
-                <div className="sb-sort-pills">
-                  {[
-                    { value: 'default',    label: 'Featured' },
-                    { value: 'new',        label: 'New' },
-                    { value: 'price-asc',  label: 'Price ↑' },
-                    { value: 'price-desc', label: 'Price ↓' },
-                    { value: 'rating',     label: 'Top Rated' },
-                  ].map(o => (
+          {/* ── FEATURED PRODUCTS ── */}
+          <section style={{ marginBottom: 128, padding: '0 16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, flexWrap: 'wrap', gap: 16 }}>
+              <div>
+                <span style={{ fontFamily: 'Manrope,sans-serif', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.3em', color: C.tertiary, display: 'block', marginBottom: 8 }}>Best Sellers</span>
+                <h2 style={{ fontFamily: 'Newsreader,serif', fontSize: 'clamp(28px, 4vw, 42px)', color: C.primaryC }}>
+                  Botanical <span style={{ fontStyle: 'italic' }}>Treasury</span>
+                </h2>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 24 }}>
+              {(products.length > 0 ? products.slice(0, 6) : PRODUCTS).map((p, i) => (
+                <div key={i} className="liquid-glass" style={{
+                  borderRadius: 32, padding: 24, display: 'flex', flexDirection: 'column',
+                  boxShadow: '0 16px 32px rgba(16,42,25,0.04)',
+                  transition: 'transform 0.3s, box-shadow 0.3s',
+                  cursor: 'pointer',
+                }}>
+                  {/* Product image placeholder */}
+                  <div style={{
+                    width: '100%', aspectRatio: '1', borderRadius: 20, marginBottom: 16,
+                    background: `linear-gradient(135deg, ${C.secondaryC}60, ${C.primaryFixed}40)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <span style={{ fontSize: 48 }}>{p.emoji || '🌿'}</span>
+                  </div>
+                  <h3 style={{ fontFamily: 'Newsreader,serif', fontSize: 18, color: C.primaryC, marginBottom: 4 }}>
+                    {p.name}
+                  </h3>
+                  <p style={{ fontFamily: 'Manrope,sans-serif', fontSize: 10, color: C.onSurfaceV, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>
+                    {p.sub || p.category || 'Classical Formulation'}
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                    <span style={{ fontFamily: 'Newsreader,serif', fontSize: 20, color: C.primaryC }}>
+                      ₹{(p.price || 0).toLocaleString('en-IN')}
+                    </span>
                     <button
-                      key={o.value}
-                      className={`sb-pill${sort === o.value ? ' active' : ''}`}
-                      onClick={() => setSort(o.value)}
-                    >
-                      {o.label}
-                    </button>
+                      onClick={() => addToCart && addToCart(p)}
+                      style={{
+                        background: C.primaryC, color: C.onPrimary,
+                        padding: '10px 20px', borderRadius: 9999, border: 'none',
+                        fontFamily: 'Manrope,sans-serif', fontSize: 10, fontWeight: 700,
+                        textTransform: 'uppercase', letterSpacing: '0.1em',
+                        cursor: 'pointer', transition: 'background 0.3s',
+                      }}
+                    >Add to Cart</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* ── BENTO PHILOSOPHY ── */}
+          {/* From Stitch: grid grid-cols-12 gap-8 h-[600px] mb-40 */}
+          <section style={{ marginBottom: 160, padding: '0 16px' }}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: '7fr 5fr', gap: 32,
+              minHeight: 500,
+            }} className="bento-grid">
+              {/* Left glass panel — from Stitch: col-span-7 liquid-glass rounded-[3rem] p-12 */}
+              <div className="liquid-glass" style={{
+                borderRadius: 48, padding: 'clamp(32px, 5vw, 48px)',
+                display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                position: 'relative', overflow: 'hidden',
+                boxShadow: '0 20px 40px rgba(16,42,25,0.06)',
+              }}>
+                {/* Ambient blob inside — from Stitch: absolute bg-secondary-container/20 blur-[100px] */}
+                <div style={{
+                  position: 'absolute', bottom: 0, right: 0, width: '100%', height: '100%',
+                  transform: 'translate(50%, 50%)', background: `${C.secondaryC}30`,
+                  borderRadius: '50%', filter: 'blur(100px)', zIndex: 0,
+                }} />
+
+                <h3 style={{
+                  fontFamily: 'Newsreader,serif', fontSize: 'clamp(28px, 4vw, 48px)',
+                  fontWeight: 700, color: C.primaryC, marginBottom: 24,
+                  lineHeight: 1.15, position: 'relative', zIndex: 1,
+                }}>
+                  "Of the Vaidya, By the Vaidya, For the Vaidya."
+                </h3>
+                <p style={{
+                  fontFamily: 'Manrope,sans-serif', fontSize: 17, color: C.secondary,
+                  lineHeight: 1.75, marginBottom: 32, maxWidth: 500,
+                  position: 'relative', zIndex: 1,
+                }}>
+                  Started by a group of Ayurvedic physicians to bring quality, authentic and affordable classical medicines to every practitioner — including rare preparations no other company manufactures.
+                </p>
+
+                {/* Stats — from Stitch: flex items-center gap-12 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 48, position: 'relative', zIndex: 1 }}>
+                  {[
+                    { val: '160+', label: 'Formulations' },
+                    { val: 'Zero', label: 'Synthetic Ingredients' },
+                    { val: 'GMP', label: 'Certified' },
+                  ].map(s => (
+                    <div key={s.label} style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontFamily: 'Newsreader,serif', fontSize: 28, fontWeight: 700, color: C.tertiary }}>{s.val}</span>
+                      <span style={{ fontFamily: 'Manrope,sans-serif', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', color: C.secondary }}>{s.label}</span>
+                    </div>
                   ))}
                 </div>
               </div>
 
-              {/* Clear filters */}
-              {(activeCats.length > 0 || maxPrice < 13000 || sort !== 'default') && (
-                <button className="sb-clear" onClick={() => { setActiveCats([]); setMaxPrice(13000); setSort('default'); }}>
-                  Clear all filters
-                </button>
-              )}
-            </div>
-          </aside>
-
-          {/* ── PRODUCT GRID — Stitch: lg:col-span-9 ── */}
-          <main className="grid-area">
-            {/* Toolbar — from Stitch: flex justify-between items-center mb-12 */}
-            <div className="toolbar">
-              <p className="toolbar-count">
-                Showing <b>{products.length}</b> of <b>{total.toLocaleString()}</b> products
-              </p>
-              {/* Sort button — from Stitch: rounded-full glass-glow */}
-              <div className="toolbar-right">
-                <div className="sort-pill-wrap">
-                  <select value={sort} onChange={e => setSort(e.target.value)} className="sort-select">
-                    <option value="default">Sort: Featured</option>
-                    <option value="new">New Arrivals</option>
-                    <option value="price-asc">Price: Low → High</option>
-                    <option value="price-desc">Price: High → Low</option>
-                    <option value="rating">Top Rated</option>
-                  </select>
-                  <svg viewBox="0 0 10 6" fill="currentColor" width="10" height="6" className="sort-arrow"><path d="M0 0l5 6 5-6z"/></svg>
+              {/* Right image — from Stitch: col-span-5 rounded-[3rem] overflow-hidden */}
+              <div style={{
+                borderRadius: 48, overflow: 'hidden', position: 'relative',
+                background: `linear-gradient(135deg, ${C.primaryC}, #1a4028)`,
+              }}>
+                <img
+                  src="https://images.unsplash.com/photo-1585435557343-3b092031a831?w=800&q=80"
+                  alt="Ayurvedic herbs and preparation"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 1s', opacity: 0.9 }}
+                />
+                {/* Gold gradient overlay at bottom */}
+                <div style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%',
+                  background: `linear-gradient(to top, ${C.primaryC}90, transparent)`,
+                }} />
+                <div style={{
+                  position: 'absolute', bottom: 32, left: 32, right: 32,
+                  color: '#fff', fontFamily: 'Newsreader,serif', fontStyle: 'italic',
+                  fontSize: 18, lineHeight: 1.6,
+                }}>
+                  "May Lord Dhanvantari shower his blessings to extend Ayurvedic service worldwide."
                 </div>
               </div>
             </div>
+          </section>
 
-            {/* Grid — from Stitch: grid-cols-2 xl:grid-cols-3 gap-8 */}
-            {loading ? (
-              <div className="product-grid">
-                {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
+          {/* ── NEWSLETTER CTA ── */}
+          <section style={{ marginBottom: 80, padding: '0 16px' }}>
+            <div style={{
+              background: `linear-gradient(135deg, ${C.primaryC}, #1a4028)`,
+              borderRadius: 48, padding: 'clamp(40px, 6vw, 64px)',
+              textAlign: 'center', position: 'relative', overflow: 'hidden',
+            }}>
+              <div style={{ position: 'absolute', top: '-20%', right: '-5%', width: 300, height: 300, background: `${C.gold}12`, filter: 'blur(80px)', borderRadius: '50%' }} />
+              <div style={{ position: 'absolute', bottom: '-20%', left: '5%', width: 250, height: 250, background: `${C.primaryFixedDim}10`, filter: 'blur(80px)', borderRadius: '50%' }} />
+              <span style={{ fontFamily: 'Manrope,sans-serif', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.3em', color: C.tertiaryFD, display: 'block', marginBottom: 16, position: 'relative' }}>Free Consultation</span>
+              <h3 style={{ fontFamily: 'Newsreader,serif', fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 400, color: '#fff', marginBottom: 20, position: 'relative' }}>
+                Connect with our <span style={{ fontStyle: 'italic', color: C.tertiaryFD }}>Vaidya Team</span>
+              </h3>
+              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', maxWidth: 480, margin: '0 auto 28px', position: 'relative' }}>
+                Get personalized guidance on Ayurvedic formulations for your practice or wellness needs.
+              </p>
+              <Link href="/contact" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: `linear-gradient(135deg, ${C.gold}, ${C.tertiaryFD})`,
+                color: C.primaryC, padding: '16px 36px', borderRadius: 9999,
+                fontFamily: 'Manrope,sans-serif', fontSize: 12, fontWeight: 800,
+                textTransform: 'uppercase', letterSpacing: '0.15em',
+                boxShadow: `0 8px 24px ${C.gold}50`, position: 'relative',
+              }}>
+                Get in Touch
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
+              </Link>
+            </div>
+          </section>
+        </main>
+
+        {/* ═══ FOOTER ═══ */}
+        {/* From Stitch: bg-[#FCFCF9] pt-20 pb-10, gradient-to-t from-secondary-container/20 */}
+        <footer style={{
+          width: '100%', paddingTop: 80, paddingBottom: 40,
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', inset: '0 0 0 0', bottom: 0, height: 384, background: `linear-gradient(to top, ${C.secondaryC}30, transparent)`, zIndex: 0 }} />
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 32px', position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: 32 }}>
+              <div style={{ maxWidth: 360 }}>
+                <span style={{ fontFamily: 'Newsreader,serif', fontStyle: 'italic', fontSize: 28, color: C.primaryC, display: 'block', marginBottom: 12 }}>SB Ayurved</span>
+                <p style={{ fontSize: 13, color: `${C.primaryC}80`, lineHeight: 1.7 }}>
+                  Of the Vaidya, By the Vaidya, For the Vaidya — quality Ayurvedic formulations since inception.
+                </p>
+                <div style={{ display: 'flex', gap: 16, marginTop: 20 }}>
+                  {[
+                    { href: 'https://www.facebook.com/SBAyurved/', icon: 'share' },
+                    { href: 'https://www.instagram.com/shree_brahmachaitanya_ayurved/', icon: 'photo_camera' },
+                  ].map(s => (
+                    <a key={s.icon} href={s.href} target="_blank" rel="noopener noreferrer" style={{
+                      width: 48, height: 48, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: `1px solid ${C.primary}15`, transition: 'background 0.2s',
+                    }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 20 }}>{s.icon}</span>
+                    </a>
+                  ))}
+                </div>
               </div>
-            ) : products.length === 0 ? (
-              <div className="empty">
-                <p className="empty-title">No products found</p>
-                <p className="empty-sub">Try adjusting your filters</p>
-                <button className="ghost-btn" onClick={() => { setSearch(''); setActiveCats([]); setMaxPrice(13000); setSort('default'); }}>
-                  Clear filters
-                </button>
-              </div>
-            ) : (
-              <div className="product-grid">
-                {products.map(p => (
-                  <ProductCard key={p.id} product={p} onAdd={() => addItem(p)} />
+              <div style={{ display: 'flex', gap: 48 }}>
+                {[
+                  { label: 'Information', links: [{ t: 'About', h: '/about' }, { t: 'Products', h: '/wellness' }, { t: 'AyuAahar', h: '/ayuaahar' }, { t: 'Contact', h: '/contact' }] },
+                  { label: 'Legal', links: [{ t: 'Privacy', h: '/privacy' }, { t: 'Terms', h: '/terms' }, { t: "FAQ's", h: '/faq' }] },
+                ].map(col => (
+                  <div key={col.label}>
+                    <span style={{ fontFamily: 'Manrope,sans-serif', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', color: C.tertiary, display: 'block', marginBottom: 16 }}>{col.label}</span>
+                    {col.links.map(l => (
+                      <Link key={l.h} href={l.h} style={{ display: 'block', fontSize: 13, color: `${C.primaryC}80`, marginBottom: 10, transition: 'color 0.2s' }}>{l.t}</Link>
+                    ))}
+                  </div>
                 ))}
               </div>
-            )}
-
-            {/* Pagination — from Stitch: w-12 h-12 rounded-full circles */}
-            {!loading && totalPages > 1 && (
-              <div className="pager">
-                <button className="pg-arrow" onClick={() => setPage(p => p - 1)} disabled={page === 1}>
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18"><path d="M13 4l-6 6 6 6"/></svg>
-                </button>
-                <div className="pg-nums">
-                  {pageNums().map((n, i) =>
-                    n === '...'
-                      ? <span key={`e${i}`} className="pg-dot">…</span>
-                      : <button key={n} className={`pg-num${page === n ? ' on' : ''}`} onClick={() => setPage(n)}>{n}</button>
-                  )}
-                </div>
-                <button className="pg-arrow" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>
-                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18"><path d="M7 4l6 6-6 6"/></svg>
-                </button>
-              </div>
-            )}
-          </main>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════════
-            NEWSLETTER CTA
-            Stitch: py-24 bg-surface-container-lowest
-            "Seasonal Rituals are Blooming"
-        ══════════════════════════════════════════════════════════ */}
-        <section className="newsletter">
-          <div className="nl-inner">
-            {/* Icon circle — from Stitch: w-24 h-24 rounded-full glass-glow mx-auto mb-8 */}
-            <div className="nl-icon">
-              <span style={{ fontSize: 36 }}>✦</span>
-            </div>
-            <h2 className="nl-title">New Arrivals are Landing</h2>
-            <p className="nl-sub">
-              Our next curated collection is being assembled. Sign up to be notified the moment it drops.
-            </p>
-            {notified ? (
-              <p style={{ color: '#9ed1bd', fontSize: 14, fontWeight: 600 }}>✓ You're on the list!</p>
-            ) : (
-              <div className="nl-form">
-                {/* Input — from Stitch: flex-grow glass-glow rounded-full px-6 py-4 */}
-                <input
-                  type="email"
-                  placeholder="Your essence (email)"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="nl-input"
-                />
-                {/* Button — from Stitch: bg-primary text-on-primary rounded-full uppercase tracking-widest */}
-                <button
-                  className="nl-btn"
-                  onClick={() => { if (email.includes('@')) setNotified(true); }}
-                >
-                  Notify
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* ══════════════════════════════════════════════════════════
-            FOOTER
-            Stitch: bg-gradient-to-b from-[#091610] to-[#05110b] py-16 px-12
-            3-col: brand | Customer Concierge | Legal
-        ══════════════════════════════════════════════════════════ */}
-        <footer className="site-footer">
-          <div className="footer-inner">
-            {/* Col 1: Brand */}
-            <div>
-              <span className="footer-logo">YourStore</span>
-              <p className="footer-tagline">
-                Committed to precision engineering and curated quality. Secure payments via Razorpay PCI DSS Level 1.
-              </p>
-              <div className="footer-social">
-                <a href="/legal/terms">Terms</a>
-                <a href="/legal/privacy-policy">Privacy</a>
+              <div>
+                <span style={{ fontFamily: 'Manrope,sans-serif', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.2em', color: C.tertiary, display: 'block', marginBottom: 12 }}>Contact</span>
+                <p style={{ fontSize: 13, color: `${C.primaryC}80`, lineHeight: 1.8 }}>
+                  533, Manorama Apt, Nagpur — 440009<br />
+                  +91 9168584999<br />
+                  info@sbayurved.com
+                </p>
               </div>
             </div>
-
-            {/* Col 2: Customer — from Stitch: "Customer Concierge" */}
-            <div>
-              <h4 className="footer-col-head">Customer Concierge</h4>
-              <ul className="footer-links">
-                <li><a href="/legal/refund-policy">Shipping &amp; Returns</a></li>
-                <li><a href="/legal/grievance">Grievance Redressal</a></li>
-                <li><a href="mailto:support@yourdomain.com">Contact Us</a></li>
-              </ul>
-            </div>
-
-            {/* Col 3: Legal */}
-            <div>
-              <h4 className="footer-col-head">Legal</h4>
-              <ul className="footer-links">
-                <li><a href="/legal/privacy-policy">Privacy Policy</a></li>
-                <li><a href="/legal/terms">Terms of Service</a></li>
-                <li><a href="/legal/refund-policy">Refund Policy</a></li>
-              </ul>
-              <p className="footer-copy">
-                © {new Date().getFullYear()} YourStore. All rights reserved.<br />
-                Payments by Razorpay Software Pvt. Ltd.
-              </p>
+            {/* Bottom line */}
+            <div style={{
+              marginTop: 48, paddingTop: 20,
+              borderTop: `1px solid ${C.primaryC}08`,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: `${C.primaryC}40`,
+            }}>
+              <span>© 2025 Shree Brahmachaitanya Ayurved. All rights reserved.</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>eco</span>
+                Rooted in Tradition
+              </span>
             </div>
           </div>
         </footer>
       </div>
 
       <style jsx>{`
-        /* ── Base ── */
-        .page { display:flex; flex-direction:column; min-height:100vh; }
-
-        /* ══════════════════════════════════
-           HERO — matches Stitch exactly
-        ══════════════════════════════════ */
-        .hero {
-          position: relative;
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          padding-top: 80px;
-          overflow: hidden;
-          background: linear-gradient(135deg, #091610 0%, #091610 50%, #05110b 100%);
+        @media (max-width: 768px) {
+          .hide-mobile { display: none !important; }
+          .bento-grid { grid-template-columns: 1fr !important; }
         }
-        /* Ambient glows */
-        .glow-tr {
-          position: absolute; top: 0; right: 0;
-          width: 700px; height: 700px;
-          background: radial-gradient(circle, rgba(0,46,34,0.25) 0%, transparent 70%);
-          transform: translate(20%,-30%);
-          pointer-events: none; z-index: 0;
-          filter: blur(60px);
-        }
-        .glow-bl {
-          position: absolute; bottom: 0; left: 0;
-          width: 500px; height: 500px;
-          background: radial-gradient(circle, rgba(233,195,73,0.07) 0%, transparent 70%);
-          transform: translate(-20%,20%);
-          pointer-events: none; z-index: 0;
-          filter: blur(80px);
-        }
-        .hero-inner {
-          max-width: 1360px; margin: 0 auto;
-          padding: 0 48px 80px;
-          display: grid;
-          grid-template-columns: 7fr 5fr;
-          gap: 60px;
-          align-items: center;
-          position: relative; z-index: 1;
-          width: 100%;
-        }
-        @media(max-width:900px){
-          .hero-inner { grid-template-columns:1fr; padding: 0 24px 60px; }
-          .hero-right { display:none; }
-        }
-
-        /* Hero left */
-        .hero-eyebrow {
-          display: block;
-          color: #e9c349; font-size: 12px; font-weight: 600;
-          letter-spacing: 0.28em; text-transform: uppercase;
-          margin-bottom: 20px;
-        }
-        .hero-h1 {
-          font-family: 'Noto Serif', serif;
-          font-size: clamp(52px, 7vw, 88px);
-          font-weight: 300; line-height: 1.08;
-          color: #d7e6dc; letter-spacing: -1.5px;
-          margin-bottom: 24px;
-        }
-        .hero-h1 em {
-          color: #e9c349; font-style: italic;
-        }
-        .hero-p {
-          font-size: 17px; color: #c1c8c1; line-height: 1.75;
-          max-width: 520px; margin-bottom: 44px; font-weight: 300;
-        }
-        .hero-ctas { display: flex; gap: 20px; flex-wrap: wrap; }
-
-        /* CTAs — from Stitch */
-        .cta-primary {
-          background: linear-gradient(135deg, #e9c349 0%, #ad8b0e 100%);
-          color: #3c2f00;
-          padding: 16px 40px; border-radius: 999px; border: none;
-          font-family: 'Manrope', sans-serif;
-          font-size: 12px; font-weight: 800;
-          text-transform: uppercase; letter-spacing: 0.14em;
-          cursor: pointer;
-          box-shadow: 0 12px 32px rgba(233,195,73,0.25);
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .cta-primary:hover { transform: scale(1.05); box-shadow: 0 16px 40px rgba(233,195,73,0.35); }
-
-        .cta-ghost {
-          padding: 16px 40px; border-radius: 999px;
-          background: rgba(42,56,49,0.35);
-          backdrop-filter: blur(12px);
-          border: 1px solid rgba(65,72,67,0.4);
-          color: #d7e6dc;
-          font-family: 'Manrope', sans-serif;
-          font-size: 12px; font-weight: 800;
-          text-transform: uppercase; letter-spacing: 0.14em;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-        .cta-ghost:hover { background: rgba(42,56,49,0.55); }
-
-        /* Hero right image panel — from Stitch: aspect-[4/5] rounded-[2rem] */
-        .hero-right {}
-        .hero-img-wrap {
-          aspect-ratio: 4/5;
-          border-radius: 32px;
-          overflow: hidden;
-          position: relative;
-          box-shadow: 0 32px 80px rgba(5,17,11,0.6);
-        }
-        .hero-img-bg {
-          width: 100%; height: 100%;
-          background: linear-gradient(145deg, #1e0d42 0%, #0d0820 50%, #0d2a1a 100%);
-          display: flex; align-items: center; justify-content: center;
-        }
-        .hero-img-emoji { font-size: 120px; filter: drop-shadow(0 16px 48px rgba(0,0,0,0.8)); }
-        /* Vignette — from Stitch: bg-gradient-to-t from-surface/60 to-transparent */
-        .hero-img-vignette {
-          position: absolute; inset: 0;
-          background: linear-gradient(to top, rgba(9,22,16,0.7) 0%, transparent 50%);
-        }
-        /* Floating card — from Stitch: absolute bottom-8 left-8 right-8 glass-card */
-        .hero-card {
-          position: absolute; bottom: 28px; left: 28px; right: 28px;
-          padding: 22px 24px;
-          background: rgba(42,56,49,0.65);
-          backdrop-filter: blur(20px);
-          border-radius: 20px;
-          border: 1px solid rgba(65,72,67,0.3);
-          box-shadow: inset 0 1px 1px rgba(65,72,67,0.3);
-        }
-        .hero-card-label {
-          font-family: 'Noto Serif', serif; font-style: italic;
-          font-size: 13px; color: #e9c349; margin-bottom: 6px;
-        }
-        .hero-card-title {
-          font-family: 'Noto Serif', serif;
-          font-size: 19px; font-weight: 400; color: #d7e6dc;
-          margin-bottom: 6px;
-        }
-        .hero-card-sub { font-size: 12px; color: #c1c8c1; line-height: 1.6; }
-
-        /* ══════════════════════════════════
-           CATALOG — from Stitch: py-24 px-12 grid grid-cols-12 gap-12
-        ══════════════════════════════════ */
-        .catalog {
-          padding: 80px 48px;
-          max-width: 1360px; margin: 0 auto; width: 100%;
-          display: grid;
-          grid-template-columns: 3fr 9fr;
-          gap: 40px;
-          align-items: start;
-        }
-        @media(max-width:960px){ .catalog { grid-template-columns:1fr; padding:48px 24px; } }
-
-        /* ── SIDEBAR ── from Stitch: sticky top-32 p-8 rounded-3xl glass-glow */
-        .sidebar {}
-        .sidebar-panel {
-          position: sticky; top: 88px;
-          padding: 28px;
-          border-radius: 24px;
-          background: rgba(17,30,24,0.85);
-          backdrop-filter: blur(16px);
-          border: 1px solid rgba(65,72,67,0.25);
-          box-shadow: inset 0 1px 1px rgba(65,72,67,0.2);
-          display: flex; flex-direction: column; gap: 32px;
-        }
-        .sb-section {}
-        /* from Stitch: text-sm uppercase tracking-widest text-primary mb-6 */
-        .sb-heading {
-          font-size: 11px; font-weight: 700; text-transform: uppercase;
-          letter-spacing: 0.15em; color: #e9c349; margin-bottom: 18px;
-          font-family: 'Manrope', sans-serif;
-        }
-        .sb-cats { display: flex; flex-direction: column; gap: 12px; }
-        /* Category checkbox row — from Stitch: flex items-center group cursor-pointer */
-        .sb-cat-item { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .sb-checkbox {
-          width: 15px; height: 15px; accent-color: #e9c349; cursor: pointer;
-          border-radius: 3px; flex-shrink: 0;
-        }
-        .sb-cat-label {
-          font-size: 13px; color: #8b938c;
-          transition: color 0.15s; font-family: 'Manrope', sans-serif;
-        }
-        .sb-cat-label.active { color: #d7e6dc; }
-        .sb-cat-item:hover .sb-cat-label { color: #d7e6dc; }
-
-        /* Price range */
-        .sb-range { width: 100%; accent-color: #e9c349; cursor: pointer; margin-bottom: 8px; }
-        .sb-price-labels {
-          display: flex; justify-content: space-between;
-          font-size: 11px; color: #8b938c; font-family: 'Manrope', sans-serif;
-        }
-
-        /* Sort pills — from Stitch: Skin Concern pill chips */
-        .sb-sort-pills { display: flex; flex-wrap: wrap; gap: 8px; }
-        .sb-pill {
-          padding: 6px 14px; border-radius: 999px;
-          font-size: 11px; font-weight: 600; font-family: 'Manrope', sans-serif;
-          background: rgba(42,56,49,0.4);
-          border: 1px solid rgba(65,72,67,0.3);
-          color: #8b938c; cursor: pointer;
-          transition: all 0.15s;
-        }
-        .sb-pill:hover { border-color: rgba(233,195,73,0.3); color: #c1c8c1; }
-        /* Active pill — from Stitch: bg-primary text-on-primary */
-        .sb-pill.active {
-          background: linear-gradient(135deg, #e9c349, #ad8b0e);
-          color: #3c2f00; border-color: transparent; font-weight: 700;
-        }
-        .sb-clear {
-          font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-          color: #ffb4ab; background: none; border: none; cursor: pointer;
-          font-family: 'Manrope', sans-serif; padding: 0;
-          transition: opacity 0.15s;
-        }
-        .sb-clear:hover { opacity: 0.75; }
-
-        /* ── GRID AREA ── */
-        .grid-area {}
-        /* Toolbar — from Stitch: flex justify-between items-center mb-12 */
-        .toolbar {
-          display: flex; align-items: center; justify-content: space-between;
-          margin-bottom: 40px; gap: 12px; flex-wrap: wrap;
-        }
-        .toolbar-count { font-size: 13px; color: #c1c8c1; }
-        .toolbar-count b { color: #d7e6dc; font-weight: 700; }
-        .toolbar-right {}
-        /* Sort — from Stitch: rounded-full glass-glow button with chevron */
-        .sort-pill-wrap { position: relative; display: inline-flex; align-items: center; }
-        .sort-select {
-          height: 40px; padding: 0 36px 0 20px;
-          background: rgba(42,56,49,0.5);
-          border: 1px solid rgba(65,72,67,0.3);
-          border-radius: 999px;
-          color: #d7e6dc; font-size: 13px; font-weight: 500;
-          outline: none; appearance: none; cursor: pointer;
-          font-family: 'Manrope', sans-serif;
-          box-shadow: inset 0 1px 1px rgba(65,72,67,0.25);
-          transition: border-color 0.2s;
-        }
-        .sort-select:focus { border-color: rgba(233,195,73,0.4); }
-        .sort-arrow {
-          position: absolute; right: 14px; color: #8b938c; pointer-events: none;
-        }
-
-        /* Product grid — from Stitch: grid-cols-2 xl:grid-cols-3 gap-8 */
-        .product-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 24px;
-        }
-        @media(max-width:1200px){ .product-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-        @media(max-width:640px)  { .product-grid { grid-template-columns:minmax(0,1fr); } }
-
-        /* Empty */
-        .empty { text-align:center; padding:80px 0; }
-        .empty-title { font-family:'Noto Serif',serif; font-size:22px; font-weight:300; font-style:italic; color:#d7e6dc; margin-bottom:8px; }
-        .empty-sub { font-size:13px; color:#8b938c; margin-bottom:24px; }
-        .ghost-btn { padding:10px 24px; border:1px solid rgba(65,72,67,0.5); border-radius:999px; background:none; color:#c1c8c1; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; cursor:pointer; font-family:'Manrope',sans-serif; transition:all .2s; }
-        .ghost-btn:hover { border-color:#e9c349; color:#e9c349; }
-
-        /* Pagination — from Stitch: w-12 h-12 rounded-full circles */
-        .pager { display:flex; align-items:center; justify-content:center; gap:10px; margin-top:56px; }
-        .pg-arrow { width:48px; height:48px; border-radius:50%; background:rgba(42,56,49,0.55); border:none; color:#c1c8c1; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .2s; box-shadow:inset 0 1px 1px rgba(65,72,67,0.3); }
-        .pg-arrow:hover:not(:disabled) { color:#e9c349; }
-        .pg-arrow:disabled { opacity:.3; cursor:not-allowed; }
-        .pg-nums { display:flex; gap:8px; }
-        .pg-num { width:48px; height:48px; border-radius:50%; background:rgba(42,56,49,0.55); border:none; color:#c1c8c1; font-size:13px; font-weight:500; display:flex; align-items:center; justify-content:center; cursor:pointer; font-family:'Manrope',sans-serif; transition:all .2s; }
-        .pg-num:hover { color:#d7e6dc; }
-        .pg-num.on { background:linear-gradient(135deg,#e9c349,#ad8b0e); color:#3c2f00; font-weight:800; box-shadow:0 4px 16px rgba(233,195,73,0.3); }
-        .pg-dot { width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-size:13px; color:#8b938c; }
-
-        /* ══════════════════════════════════
-           NEWSLETTER — Stitch: py-24 bg-surface-container-lowest
-        ══════════════════════════════════ */
-        .newsletter {
-          background: #05110b;
-          padding: 80px 24px;
-          margin-top: 0;
-        }
-        .nl-inner {
-          max-width: 600px; margin: 0 auto; text-align: center;
-          padding: 64px 48px;
-          border: 1px dashed rgba(65,72,67,0.3);
-          border-radius: 48px;
-        }
-        /* Icon — from Stitch: w-24 h-24 rounded-full glass-glow mx-auto mb-8 */
-        .nl-icon {
-          width: 88px; height: 88px; border-radius: 50%;
-          background: rgba(42,56,49,0.6);
-          border: 1px solid rgba(65,72,67,0.3);
-          display: flex; align-items: center; justify-content: center;
-          margin: 0 auto 28px; color: #e9c349;
-          box-shadow: inset 0 1px 1px rgba(65,72,67,0.3);
-        }
-        /* Headline — from Stitch: text-3xl font-headline font-light */
-        .nl-title {
-          font-family: 'Noto Serif', serif;
-          font-size: 28px; font-weight: 300; color: #d7e6dc;
-          margin-bottom: 14px;
-        }
-        .nl-sub { font-size: 14px; color: #c1c8c1; line-height: 1.75; margin-bottom: 36px; max-width: 400px; margin-left: auto; margin-right: auto; }
-        /* Email form — from Stitch: flex max-w-sm gap-4 */
-        .nl-form { display: flex; gap: 14px; max-width: 380px; margin: 0 auto; }
-        /* Input — from Stitch: glass-glow rounded-full px-6 py-4 */
-        .nl-input {
-          flex: 1; padding: 14px 22px;
-          background: rgba(17,30,24,0.8);
-          border: 1px solid rgba(65,72,67,0.3);
-          border-radius: 999px; color: #d7e6dc;
-          font-size: 13px; font-family: 'Manrope', sans-serif;
-          outline: none; transition: border-color 0.2s;
-        }
-        .nl-input:focus { border-color: rgba(233,195,73,0.4); }
-        .nl-input::placeholder { color: #8b938c; }
-        /* Button — from Stitch: bg-primary text-on-primary rounded-full uppercase tracking-widest */
-        .nl-btn {
-          padding: 14px 28px; border-radius: 999px; border: none;
-          background: linear-gradient(135deg, #e9c349, #ad8b0e);
-          color: #3c2f00; font-family: 'Manrope', sans-serif;
-          font-size: 11px; font-weight: 800; text-transform: uppercase;
-          letter-spacing: 0.14em; cursor: pointer;
-          box-shadow: 0 6px 20px rgba(233,195,73,0.25);
-          transition: transform 0.2s;
-          white-space: nowrap;
-        }
-        .nl-btn:hover { transform: scale(1.04); }
-
-        /* ══════════════════════════════════
-           FOOTER — from Stitch exactly
-        ══════════════════════════════════ */
-        .site-footer {
-          background: linear-gradient(to bottom, #091610, #05110b);
-          padding: 64px 48px;
-          border-top: 1px solid rgba(65,72,67,0.1);
-        }
-        .footer-inner {
-          max-width: 1360px; margin: 0 auto;
-          display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 48px;
-        }
-        @media(max-width:768px){ .footer-inner { grid-template-columns:1fr; gap:32px; } }
-        .footer-logo {
-          font-family: 'Noto Serif', serif; font-size: 20px; font-weight: 300;
-          font-style: italic; color: #e9c349; display: block; margin-bottom: 14px;
-        }
-        .footer-tagline { font-size: 13px; color: #c1c8c1; line-height: 1.75; opacity: 0.8; margin-bottom: 18px; max-width: 280px; }
-        .footer-social { display: flex; gap: 20px; }
-        .footer-social a { font-size: 13px; color: #c1c8c1; transition: color 0.2s; opacity: 0.8; }
-        .footer-social a:hover { color: #e9c349; opacity: 1; }
-        /* Column heading — from Stitch: text-[#e9c349] uppercase tracking-widest text-xs */
-        .footer-col-head {
-          font-size: 10px; font-weight: 700; text-transform: uppercase;
-          letter-spacing: 0.16em; color: #e9c349; margin-bottom: 20px;
-          font-family: 'Manrope', sans-serif;
-        }
-        .footer-links { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-        .footer-links a { font-size: 13px; color: #c1c8c1; transition: color 0.2s; }
-        .footer-links a:hover { color: #e9c349; }
-        .footer-copy { font-size: 10px; color: rgba(193,200,193,0.35); line-height: 1.7; padding-top: 20px; border-top: 1px solid rgba(65,72,67,0.1); }
       `}</style>
     </>
-  );
-}
-
-/* ── Skeleton card ── */
-function SkeletonCard() {
-  return (
-    <div style={{ background:'rgba(17,30,24,0.8)', borderRadius:32, padding:16, boxShadow:'inset 0 1px 1px rgba(65,72,67,0.3)' }}>
-      <div style={{ aspectRatio:'1', borderRadius:16, overflow:'hidden', marginBottom:20 }} className="sk" />
-      <div style={{ padding:'0 8px' }}>
-        <div className="sk" style={{ height:16, width:'72%', borderRadius:8, marginBottom:10 }} />
-        <div className="sk" style={{ height:11, width:'50%', borderRadius:8, marginBottom:18 }} />
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-          <div className="sk" style={{ height:20, width:'38%', borderRadius:8 }} />
-          <div className="sk" style={{ width:48, height:48, borderRadius:'50%' }} />
-        </div>
-      </div>
-      <style jsx>{`.sk{background:linear-gradient(90deg,rgba(42,56,49,.6) 25%,rgba(42,56,49,.9) 50%,rgba(42,56,49,.6) 75%);background-size:200% 100%;animation:sh 1.6s infinite}@keyframes sh{to{background-position:-200% 0}}`}</style>
-    </div>
-  );
-}
-
-/* ── Product Card — matches Stitch storefront_catalog cards ── */
-function ProductCard({ product: p, onAdd }) {
-  const [added, setAdded] = useState(false);
-  const gradient = CAT_GRADIENT[p.category] || 'linear-gradient(145deg,#1a2a20,#0d1a10)';
-  const stars    = '★'.repeat(Math.floor(p.rating || 4)) + '☆'.repeat(5 - Math.floor(p.rating || 4));
-  const inStock  = (p.stock || 0) > 0;
-  const lowStock = inStock && (p.stock || 0) < 10;
-
-  function handleAdd() {
-    if (!inStock) return;
-    onAdd(); setAdded(true);
-    setTimeout(() => setAdded(false), 1800);
-  }
-
-  return (
-    /* from Stitch: group relative bg-surface-container-low rounded-[2rem] p-4 glass-glow
-       hover:translate-y-[-8px] transition-all duration-500 */
-    <div className="card">
-      {/* Image area — from Stitch: aspect-square rounded-2xl overflow-hidden relative mb-6 */}
-      <div className="cimg" style={{ background: gradient }}>
-        <span className="cemoji">{p.emoji || '📦'}</span>
-
-        {/* New badge — from Stitch: absolute top-4 left-4 gold pill */}
-        {p.is_new && inStock && <div className="badge-new">New</div>}
-
-        {/* Low stock bar — from Stitch: absolute bottom-4 error bar */}
-        {lowStock && inStock && (
-          <div className="badge-low">⚠ Only {p.stock} left in stock</div>
-        )}
-
-        {/* Added overlay — from Stitch: inset gold circle check */}
-        {added && (
-          <div className="added-overlay">
-            <div className="added-circle">
-              <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="2.5" width="28" height="28">
-                <path d="M5 14l6 6 12-12"/>
-              </svg>
-            </div>
-          </div>
-        )}
-
-        {/* Out of stock — from Stitch: surface/60 overlay + Sold Out pill */}
-        {!inStock && (
-          <div className="oos-overlay">
-            <span className="sold-out">Sold Out</span>
-          </div>
-        )}
-      </div>
-
-      {/* Body — from Stitch: px-2 */}
-      <div className="cbody">
-        {/* Name — from Stitch: font-headline text-lg mb-1 */}
-        <h3 className="cname">{p.name}</h3>
-        {/* Desc — from Stitch: text-on-surface-variant text-sm mb-4 */}
-        <p className="cdesc">{p.categoryLabel || p.category}</p>
-
-        <div className="crating">
-          <span className="stars">{stars}</span>
-          <span className="rcount">{p.rating} · {(p.reviews || 0).toLocaleString()}</span>
-        </div>
-
-        <div className="cfoot">
-          {/* Price — from Stitch: text-primary font-headline text-xl */}
-          <span className={`cprice${!inStock ? ' oos' : ''}`}>
-            ₹{(p.price || 0).toLocaleString('en-IN')}
-          </span>
-
-          {!inStock ? (
-            /* Waitlist — from Stitch: px-6 py-2 rounded-full text-[10px] */
-            <button className="waitlist">Notify Me</button>
-          ) : added ? (
-            <div className="in-cart">
-              <span style={{ color:'#e9c349', fontWeight:700 }}>✓</span>
-              <span>Added</span>
-            </div>
-          ) : (
-            /* Add — from Stitch: w-12 h-12 rounded-full hover:bg-primary */
-            <button className="addbtn" onClick={handleAdd}>
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14">
-                <path d="M8 2v12M2 8h12"/>
-              </svg>
-            </button>
-          )}
-        </div>
-      </div>
-
-      <style jsx>{`
-        /* from Stitch: rounded-[2rem] p-4 glass-glow hover:-translate-y-2 duration-500 */
-        .card {
-          background: rgba(17,30,24,0.85);
-          border-radius: 32px; padding: 16px;
-          box-shadow: inset 0 1px 1px rgba(65,72,67,0.3);
-          transition: transform 0.5s cubic-bezier(0.2,0,0,1), box-shadow 0.5s;
-          position: relative;
-        }
-        .card:hover { transform: translateY(-8px); box-shadow: inset 0 1px 1px rgba(65,72,67,0.3), 0 24px 56px rgba(5,17,11,0.55); }
-
-        /* from Stitch: aspect-square rounded-2xl overflow-hidden relative mb-6 */
-        .cimg {
-          aspect-ratio: 1/1; border-radius: 16px; overflow: hidden;
-          position: relative; margin-bottom: 20px;
-          display: flex; align-items: center; justify-content: center;
-        }
-        .cemoji { font-size: 72px; filter: drop-shadow(0 8px 28px rgba(0,0,0,.7)); transition: transform 0.5s; }
-        .card:hover .cemoji { transform: scale(1.1); }
-
-        /* from Stitch: absolute top-4 left-4 bg-primary gold pill */
-        .badge-new { position:absolute; top:14px; left:14px; padding:5px 14px; background:linear-gradient(135deg,#e9c349,#ad8b0e); color:#3c2f00; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.12em; border-radius:999px; }
-
-        /* from Stitch: absolute bottom-4 left-4 right-4 error bg bar */
-        .badge-low { position:absolute; bottom:12px; left:12px; right:12px; padding:8px 14px; background:rgba(147,0,10,0.75); backdrop-filter:blur(8px); border-radius:12px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#ffdad6; }
-
-        /* from Stitch: inset gold circle check overlay */
-        .added-overlay { position:absolute; inset:0; background:rgba(233,195,73,0.18); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; }
-        .added-circle { width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#e9c349,#ad8b0e); color:#3c2f00; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 28px rgba(233,195,73,0.4); }
-
-        /* from Stitch: surface/60 overlay + border pill */
-        .oos-overlay { position:absolute; inset:0; background:rgba(9,22,16,0.62); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; }
-        .sold-out { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.14em; color:#c1c8c1; border:1px solid rgba(193,200,193,0.3); padding:8px 22px; border-radius:999px; }
-
-        .cbody { padding: 0 8px 8px; }
-        /* from Stitch: font-headline text-lg mb-1 */
-        .cname { font-family:'Noto Serif',serif; font-size:16px; font-weight:400; line-height:1.35; color:#d7e6dc; margin-bottom:5px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-        /* from Stitch: text-on-surface-variant text-sm mb-4 */
-        .cdesc { font-size:12px; color:#8b938c; text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
-        .crating { font-size:11px; color:#8b938c; margin-bottom:14px; display:flex; align-items:center; gap:4px; }
-        .stars { color:#e9c349; letter-spacing:-1px; }
-        .rcount { font-size:10px; }
-        /* from Stitch: flex justify-between items-center */
-        .cfoot { display:flex; align-items:center; justify-content:space-between; }
-        /* from Stitch: text-primary font-headline text-xl */
-        .cprice { font-family:'Noto Serif',serif; font-size:20px; font-weight:400; color:#e9c349; }
-        .cprice.oos { color:#8b938c; }
-        /* from Stitch: w-12 h-12 rounded-full hover:bg-primary hover:text-on-primary */
-        .addbtn { width:48px; height:48px; border-radius:50%; background:rgba(42,56,49,0.7); border:1px solid rgba(65,72,67,0.4); color:#c1c8c1; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; box-shadow:inset 0 1px 1px rgba(65,72,67,0.3); transition:all .25s; }
-        .addbtn:hover { background:linear-gradient(135deg,#e9c349,#ad8b0e); border-color:transparent; color:#3c2f00; transform:scale(1.1); }
-        .in-cart { display:flex; align-items:center; gap:6px; padding:8px 16px; border-radius:999px; background:rgba(233,195,73,0.1); border:1px solid rgba(233,195,73,0.3); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#e9c349; }
-        .waitlist { padding:8px 18px; border-radius:999px; background:rgba(42,56,49,0.6); border:1px solid rgba(65,72,67,0.4); color:#c1c8c1; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; cursor:pointer; font-family:'Manrope',sans-serif; transition:all .2s; }
-        .waitlist:hover { background:rgba(193,200,193,0.1); color:#d7e6dc; }
-      `}</style>
-    </div>
   );
 }

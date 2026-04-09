@@ -1,143 +1,79 @@
-// pages/order-success.jsx — Botanical Glass
-import { useEffect } from 'react';
+// pages/order-success.jsx
+// ═══ Order Success — light Botanical Liquid Glass ═══
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 
 export default function OrderSuccess() {
   const router = useRouter();
-  const { paymentId, orderId } = router.query;
-
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  const { ref } = router.query;
 
   return (
     <>
-      <Head><title>Order Confirmed — YourStore</title></Head>
-      <div className="page">
-        <div className="ambient1" /><div className="ambient2" />
+      <Head>
+        <title>Order Confirmed | SB Ayurved</title>
+        <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+      </Head>
 
-        {/* Minimal nav */}
-        <header className="shead">
-          <Link href="/" className="logo">YourStore</Link>
-        </header>
+      <div style={{ background:'#FCFCF9', color:'#1a1c1b', minHeight:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', position:'relative', overflow:'hidden' }}>
+        {/* Atmospheric blobs */}
+        <div className="botanical-blob" style={{ top:'-10%', left:'-10%', width:'50vw', height:'50vw', background:'rgba(203,234,208,0.3)' }} />
+        <div className="botanical-blob" style={{ bottom:'-10%', right:'-10%', width:'40vw', height:'40vw', background:'rgba(176,206,181,0.2)' }} />
 
-        <main className="main">
-          <div className="card">
-
-            {/* Pulsing check circle — from Stitch order_success screen */}
-            <div className="check-wrap">
-              <div className="pulse-ring" />
-              <div className="check-circle">
-                <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="2" width="28" height="28">
-                  <path d="M5 14l6 6 12-12"/>
-                </svg>
-              </div>
-            </div>
-
-            <h1 className="headline">Your journey begins here</h1>
-            <p className="sub">
-              Thank you for your order. Your selection is being curated and prepared for dispatch.
-            </p>
-
-            {/* Transaction IDs */}
-            {(paymentId || orderId) && (
-              <div className="ids">
-                {paymentId && (
-                  <div className="id-row">
-                    <span className="id-label">Payment ID</span>
-                    <span className="id-val">{paymentId}</span>
-                  </div>
-                )}
-                {orderId && (
-                  <div className="id-row">
-                    <span className="id-label">Order Reference</span>
-                    <span className="id-val">{orderId}</span>
-                  </div>
-                )}
-                <p className="ids-note">Save these for any returns or queries</p>
-              </div>
-            )}
-
-            {/* Next steps */}
-            <div className="steps">
-              <div className="step-item">
-                <div className="step-icon">✉</div>
-                <div>
-                  <p className="step-title">Confirmation sent</p>
-                  <p className="step-sub">Check your inbox for order details</p>
-                </div>
-              </div>
-              <div className="step-item">
-                <div className="step-icon">📦</div>
-                <div>
-                  <p className="step-title">Preparing for dispatch</p>
-                  <p className="step-sub">Ships within 1–2 business days</p>
-                </div>
-              </div>
-              <div className="step-item">
-                <div className="step-icon">↩</div>
-                <div>
-                  <p className="step-title">Easy returns</p>
-                  <p className="step-sub"><a href="/legal/refund-policy">7-day return window</a> from delivery</p>
-                </div>
-              </div>
-            </div>
-
-            {/* CTAs */}
-            <div className="ctas">
-              <Link href="/" className="btn-primary">Continue Shopping</Link>
-              <Link href="/legal/grievance" className="btn-secondary">Need help?</Link>
-            </div>
-
+        <div className="liquid-glass" style={{
+          borderRadius:48, padding:'clamp(40px,6vw,64px)', maxWidth:560, width:'90%', textAlign:'center',
+          boxShadow:'0 30px 60px rgba(16,42,25,0.08)', position:'relative', zIndex:1,
+        }}>
+          {/* Success icon */}
+          <div style={{
+            width:80, height:80, borderRadius:9999, margin:'0 auto 24px',
+            background:'rgba(203,234,208,0.4)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize:40, color:'#102a19' }}>check_circle</span>
           </div>
-        </main>
+
+          <h1 style={{ fontFamily:'Newsreader,serif', fontSize:36, fontWeight:300, color:'#102a19', marginBottom:12 }}>
+            Order <span style={{ fontStyle:'italic' }}>Confirmed</span>
+          </h1>
+          <p style={{ fontSize:15, color:'#424842', lineHeight:1.7, marginBottom:8 }}>
+            Thank you for your order. Your Ayurvedic formulations are being prepared with care.
+          </p>
+
+          {ref && (
+            <div style={{
+              margin:'24px auto', padding:'12px 24px', borderRadius:12,
+              background:'rgba(203,234,208,0.2)', display:'inline-block',
+            }}>
+              <span style={{ fontFamily:'Manrope,sans-serif', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.15em', color:'#424842' }}>Order Reference</span>
+              <p style={{ fontFamily:'Newsreader,serif', fontSize:20, color:'#102a19', marginTop:4 }}>{ref}</p>
+            </div>
+          )}
+
+          <p style={{ fontSize:13, color:'#424842', marginTop:16, marginBottom:32 }}>
+            You'll receive a confirmation email shortly with tracking details.
+          </p>
+
+          <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
+            <Link href="/" style={{
+              display:'inline-flex', alignItems:'center', gap:8,
+              background:'#102a19', color:'#fff', padding:'14px 32px', borderRadius:9999,
+              fontFamily:'Manrope,sans-serif', fontSize:12, fontWeight:700,
+              textTransform:'uppercase', letterSpacing:'0.12em',
+              boxShadow:'0 12px 32px rgba(16,42,25,0.15)',
+            }}>
+              Continue Shopping
+              <span className="material-symbols-outlined" style={{ fontSize:16 }}>arrow_forward</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Bottom brand */}
+        <p style={{ position:'absolute', bottom:32, fontSize:12, color:'rgba(16,42,25,0.3)', fontFamily:'Newsreader,serif', fontStyle:'italic' }}>
+          SB Ayurved — Rooted in Tradition
+        </p>
       </div>
-
-      <style jsx>{`
-        .page { min-height:100vh; background:var(--bg); position:relative; overflow:hidden; }
-        .ambient1 { position:fixed; top:-10%; right:-5%; width:700px; height:700px; background:radial-gradient(circle,rgba(27,77,62,0.2) 0%,transparent 70%); pointer-events:none; z-index:0; }
-        .ambient2 { position:fixed; bottom:-10%; left:-5%; width:500px; height:500px; background:radial-gradient(circle,rgba(233,195,73,0.08) 0%,transparent 70%); pointer-events:none; z-index:0; }
-
-        .shead { padding:0 32px; height:64px; display:flex; align-items:center; border-bottom:1px solid rgba(65,72,67,0.2); position:relative; z-index:1; }
-        .logo { font-family:'Noto Serif',serif; font-size:18px; font-weight:300; font-style:italic; color:var(--gold); }
-
-        .main { display:flex; align-items:center; justify-content:center; padding:60px 24px 80px; position:relative; z-index:1; }
-        .card { width:100%; max-width:600px; background:rgba(42,56,49,0.55); backdrop-filter:blur(28px); border-radius:32px; padding:56px 48px; text-align:center; box-shadow:inset 0 1px 1px rgba(65,72,67,0.3),0 24px 60px rgba(5,17,11,0.4); }
-        @media(max-width:600px){ .card { padding:40px 28px; border-radius:24px; } }
-
-        /* Pulsing check */
-        .check-wrap { position:relative; width:100px; height:100px; margin:0 auto 32px; display:flex; align-items:center; justify-content:center; }
-        .pulse-ring { position:absolute; inset:0; border-radius:50%; border:1px solid rgba(233,195,73,0.35); animation:pulse 2.4s ease-out infinite; }
-        @keyframes pulse { 0%{transform:scale(1);opacity:.8} 70%{transform:scale(1.3);opacity:0} 100%{opacity:0} }
-        .check-circle { width:80px; height:80px; border-radius:50%; border:1px solid rgba(233,195,73,0.25); background:rgba(233,195,73,0.08); display:flex; align-items:center; justify-content:center; color:var(--gold); }
-
-        .headline { font-family:'Noto Serif',serif; font-size:clamp(24px,5vw,40px); font-weight:300; font-style:italic; letter-spacing:-0.5px; line-height:1.2; margin-bottom:14px; }
-        .sub { font-size:14px; color:var(--text2); line-height:1.8; max-width:420px; margin:0 auto 32px; }
-
-        /* IDs block */
-        .ids { background:rgba(9,22,16,0.6); border-radius:16px; padding:18px 22px; margin-bottom:32px; text-align:left; box-shadow:inset 0 1px 1px rgba(65,72,67,0.25); }
-        .id-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(65,72,67,0.15); }
-        .id-row:last-of-type { border:none; }
-        .id-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:var(--text3); }
-        .id-val { font-family:monospace; font-size:12px; color:var(--teal); font-weight:600; }
-        .ids-note { font-size:11px; color:var(--text3); margin-top:10px; font-style:italic; }
-
-        /* Steps */
-        .steps { display:flex; flex-direction:column; gap:0; margin-bottom:36px; text-align:left; }
-        .step-item { display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid rgba(65,72,67,0.12); }
-        .step-item:last-child { border:none; }
-        .step-icon { font-size:20px; width:40px; height:40px; background:rgba(65,72,67,0.3); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-        .step-title { font-size:13px; font-weight:600; color:var(--text); margin-bottom:2px; }
-        .step-sub { font-size:11.5px; color:var(--text2); }
-        .step-sub a { color:var(--teal); text-decoration:underline; text-underline-offset:2px; }
-
-        /* CTAs */
-        .ctas { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-        .btn-primary { padding:0 32px; height:52px; background:linear-gradient(135deg,var(--gold),var(--gold-dark)); color:var(--on-gold); border-radius:999px; font-family:'Manrope',sans-serif; font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; display:inline-flex; align-items:center; text-decoration:none; box-shadow:0 8px 24px rgba(233,195,73,0.22); transition:transform .2s, box-shadow .2s; }
-        .btn-primary:hover { transform:scale(1.03); box-shadow:0 12px 32px rgba(233,195,73,0.32); }
-        .btn-secondary { padding:0 28px; height:52px; background:rgba(42,56,49,0.5); border:1px solid rgba(65,72,67,0.4); color:var(--text2); border-radius:999px; font-family:'Manrope',sans-serif; font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; display:inline-flex; align-items:center; text-decoration:none; transition:all .2s; }
-        .btn-secondary:hover { border-color:rgba(233,195,73,0.3); color:var(--gold); }
-      `}</style>
     </>
   );
 }

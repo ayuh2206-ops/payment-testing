@@ -1,143 +1,186 @@
 // pages/about.jsx
-// About Us — Shree Brahmachaitanya Ayurved
-// Stitch Botanical Liquid Glass: glassmorphic cards, green gradient blobs, gold accents, editorial typography
-import { useState, useEffect } from 'react';
-import StoreLayout, { GlassCard, PageHero } from '@/components/StoreLayout';
-
-const PILLARS = [
-  { icon: 'eco',     gold: true,  title: 'Authentic Formulations', desc: 'More than 160 generic and 12 research-based proprietary products manufactured following classical Shastrokt principles and good manufacturing practices.' },
-  { icon: 'science', gold: true,  title: 'Expert Vaidya Team',     desc: 'Core associates are postgraduates in Rasashastra, Bhaishajya Kalpana, Dravyaguna, Kaychikitsa, M.Pharm — bringing deep knowledge of Ayurvedic manufacturing.' },
-  { icon: 'volunteer_activism', gold: true, title: 'Affordable & Accessible', desc: 'Quality, effective and affordable classical medicines — including rare preparations unavailable elsewhere — for every Ayurvedic practitioner.' },
-  { icon: 'verified', gold: true, title: 'Research-Driven',        desc: 'Bridging traditional wisdom with modern dosage forms. Every proprietary product is tested and validated before reaching the Vaidya.' },
-];
+// ═══ About — matching Stitch our_philosophy/code.html exactly ═══
+import Head from 'next/head';
+import Link from 'next/link';
 
 export default function AboutPage() {
-  const [cmsContent, setCmsContent] = useState(null);
-
-  useEffect(() => {
-    fetch('/api/p/about-us').then(r => r.ok ? r.json() : null).then(d => d && setCmsContent(d.page)).catch(() => {});
-  }, []);
-
   return (
-    <StoreLayout title="About Us" description="Learn about Shree Brahmachaitanya Ayurved — Of the Vaidya, By the Vaidya, For the Vaidya">
-      <PageHero
-        title="About Shree Brahmachaitanya Ayurveda"
-        breadcrumb="About Us"
-        subtitle="Of the Vaidya, By the Vaidya, For the Vaidya"
-      />
+    <>
+      <Head>
+        <title>About Us | SB Ayurved</title>
+        <meta name="description" content="The philosophy behind Shree Brahmachaitanya Ayurved — Of the Vaidya, By the Vaidya, For the Vaidya" />
+        <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+      </Head>
 
-      {/* ─── Main Content Glass Panel ─── */}
-      <section style={{ maxWidth:960, margin:'0 auto', padding:'0 32px 64px', position:'relative' }}>
-        {/* Extra decorative blob for depth */}
-        <div style={{ position:'absolute', top:'10%', left:'-15%', width:300, height:300, background:'rgba(73,101,80,0.06)', filter:'blur(80px)', borderRadius:'50%', pointerEvents:'none', zIndex:0 }} />
+      <div style={{ background:'#FCFCF9', color:'#1a1c1b', minHeight:'100vh', overflow:'hidden' }}>
 
-        <GlassCard style={{ position:'relative', zIndex:1, padding:'clamp(32px,5vw,64px)' }}>
-          {/* Tagline */}
-          <div style={{ textAlign:'center', marginBottom:48 }}>
-            <span style={{
-              fontFamily:'Newsreader,serif', fontSize:'clamp(22px,3vw,30px)',
-              fontStyle:'italic', fontWeight:400, color:'#D4AF37',
-              display:'block', lineHeight:1.5,
-            }}>
-              "Of the Vaidya, By the Vaidya, For the Vaidya"
-            </span>
-          </div>
+        {/* ═══ ATMOSPHERIC BLOBS — from Stitch ═══ */}
+        <div className="botanical-blob" style={{ top:'-10%', left:'-10%', width:'50vw', height:'50vw', background:'rgba(203,234,208,0.3)' }} />
+        <div className="botanical-blob" style={{ bottom:'-10%', right:'-10%', width:'60vw', height:'60vw', background:'rgba(187,203,187,0.2)' }} />
+        <div className="botanical-blob" style={{ top:'30%', right:'10%', width:'40vw', height:'40vw', background:'rgba(222,228,221,0.4)' }} />
 
-          {/* Body paragraphs */}
-          <div style={{ fontFamily:'Manrope,sans-serif', fontSize:16, color:'#424842', lineHeight:1.9, maxWidth:720, margin:'0 auto' }}>
-            <p style={{ marginBottom:24 }}>
-              <strong style={{ color:'#102A19' }}>Shree Brahmachaitanya Ayurved</strong> is a firm started by a group of Ayurvedic physicians (Vaidya) for the Ayurvedic physicians — to avail quality, effective and affordable classical and tested proprietary medicines from senior and experienced Vaidyas as per realistic requirement for Ayurvedic practice and ultimately for the goodness of society.
-            </p>
-            <p style={{ marginBottom:24 }}>
-              The most problematic issue faced in day-to-day practice is the unavailability of authentic and cost-effective Ayurvedic medicines, and many times the unavailability of few efficacious but rare medicinal preparations, which are not in use only because no company manufactures them. Many Ayurved practitioners have shared that some good result-oriented classical products are not used simply because they are not available in the market.
-            </p>
-            <p style={{ marginBottom:24 }}>
-              The core associates have deep experience in the manufacturing field and are strong supporters of this ideology, following good manufacturing practices in classical product production. They worked on these limitations and decided to go for the production of common and uncommon generic medicines in a highly cost-effective way.
-            </p>
-            <p style={{ marginBottom:24 }}>
-              Core Associates of Shree Brahmachaitanya Ayurved are postgraduates in Ayurved, Rasashastra and Bhaishajya Kalpana, Dravyaguna, Kaychikitsa, M.Pharm, and Basic Sciences — bringing depth knowledge of Ayurvedic Shastrokt manufacturing principles as well as several new dosage forms.
-            </p>
-            <p>
-              In a very short span, by the grace of <em style={{ color:'#102A19' }}>Lord Dhanvantari</em> and <em style={{ color:'#102A19' }}>Shri Brahmachaitanya Gondavlekar Maharaj</em>, they have succeeded in producing more than 160 generic and 12 research-based proprietary products — extending service to Vaidyas across the nation with the mission to bring the holiness of Ayurved across the globe.
-            </p>
-          </div>
-
-          {/* Stats row */}
-          <div style={{
-            display:'flex', flexWrap:'wrap', justifyContent:'center', gap:40, marginTop:56, paddingTop:40,
-            borderTop:'1px solid rgba(16,42,25,0.06)',
-          }}>
-            {[
-              { num: '160+', label: 'Generic Products' },
-              { num: '12+', label: 'Proprietary Formulas' },
-              { num: '100+', label: 'Associated Vaidyas' },
-            ].map(s => (
-              <div key={s.label} style={{ textAlign:'center' }}>
-                <span style={{ fontFamily:'Newsreader,serif', fontSize:36, fontWeight:700, color:'#D4AF37', display:'block' }}>{s.num}</span>
-                <span style={{ fontFamily:'Manrope,sans-serif', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.2em', color:'#424842' }}>{s.label}</span>
-              </div>
+        {/* ═══ NAVBAR — from Stitch: glass pill ═══ */}
+        <nav style={{
+          position:'fixed', top:0, left:0, right:0, zIndex:50,
+          display:'flex', justifyContent:'space-between', alignItems:'center',
+          padding:'16px 40px', maxWidth:1280, margin:'24px auto 0', width:'92%',
+          borderRadius:9999,
+          background:'rgba(255,255,255,0.4)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)',
+          borderTop:'1.5px solid rgba(255,255,255,0.8)', borderLeft:'1.5px solid rgba(255,255,255,0.8)',
+          borderBottom:'1.5px solid rgba(255,255,255,0.4)', borderRight:'1.5px solid rgba(255,255,255,0.4)',
+          boxShadow:'0 20px 40px rgba(16,42,25,0.06)',
+        }}>
+          <Link href="/"><span style={{ fontSize:22, fontFamily:'Newsreader,serif', fontStyle:'italic', color:'#102a19' }}>SB Ayurved</span></Link>
+          <div style={{ display:'flex', alignItems:'center', gap:40 }} className="hide-mobile">
+            {['Shop','About','AyuAahar','Contact'].map((l,i) => (
+              <Link key={l} href={['/','/about','/ayuaahar','/contact'][i]} style={{
+                fontFamily:'Manrope,sans-serif', fontSize:11, fontWeight:500,
+                textTransform:'uppercase', letterSpacing:'0.15em',
+                color: l==='About' ? '#102a19' : '#424842',
+                borderBottom: l==='About' ? '2px solid rgba(16,42,25,0.2)' : 'none', paddingBottom:4,
+                transition:'color 0.3s',
+              }}>{l}</Link>
             ))}
           </div>
-        </GlassCard>
-      </section>
+          <div style={{ display:'flex', alignItems:'center', gap:24, color:'#102a19' }}>
+            <Link href="/checkout"><span className="material-symbols-outlined">shopping_bag</span></Link>
+            <Link href="/admin"><span className="material-symbols-outlined">person</span></Link>
+          </div>
+        </nav>
 
-      {/* ─── Pillars Grid ─── */}
-      <section style={{ maxWidth:1100, margin:'0 auto', padding:'0 32px 80px' }}>
-        <div style={{ textAlign:'center', marginBottom:40 }}>
-          <span style={{ fontFamily:'Manrope,sans-serif', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.3em', color:'#D4AF37', display:'block', marginBottom:12 }}>Our Foundation</span>
-          <h2 style={{ fontFamily:'Newsreader,serif', fontSize:'clamp(28px,4vw,42px)', fontWeight:300, color:'#102A19' }}>
-            What Sets Us <span style={{ fontStyle:'italic' }}>Apart</span>
-          </h2>
-        </div>
+        {/* ═══ MAIN ═══ */}
+        <main style={{ paddingTop:192, paddingBottom:128, padding:'192px 24px 128px' }}>
 
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(240px, 1fr))', gap:24 }}>
-          {PILLARS.map((p, i) => (
-            <div key={i} style={{
-              background:'rgba(255,255,255,0.5)',
-              backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)',
-              borderTop:'1.5px solid rgba(255,255,255,0.8)',
-              borderLeft:'1.5px solid rgba(255,255,255,0.8)',
-              borderBottom:'1.5px solid rgba(255,255,255,0.2)',
-              borderRight:'1.5px solid rgba(255,255,255,0.2)',
-              borderRadius:28, padding:32,
-              boxShadow:'0 16px 32px rgba(16,42,25,0.05)',
-              transform: i % 2 === 1 ? 'translateY(16px)' : 'none',
+          {/* ── Hero — from Stitch: max-w-5xl mx-auto text-center mb-40 ── */}
+          <section style={{ maxWidth:960, margin:'0 auto', textAlign:'center', marginBottom:160, position:'relative' }}>
+            {/* Sage underglow */}
+            <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'120%', height:'120%', background:'rgba(73,101,80,0.05)', filter:'blur(100px)', zIndex:0 }} />
+
+            <span style={{ fontFamily:'Manrope,sans-serif', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.3em', color:'#424842', display:'block', marginBottom:32, position:'relative' }}>The Soul of SB Ayurved</span>
+
+            <h1 style={{
+              fontFamily:'Newsreader,serif', fontSize:'clamp(40px,7vw,80px)',
+              fontWeight:300, color:'#001406', letterSpacing:'-0.02em',
+              lineHeight:1.1, marginBottom:64, position:'relative',
             }}>
-              <span className="material-symbols-outlined" style={{ fontSize:32, color:'#D4AF37', marginBottom:16, display:'block' }}>{p.icon}</span>
-              <h3 style={{ fontFamily:'Newsreader,serif', fontSize:20, color:'#102A19', marginBottom:10 }}>{p.title}</h3>
-              <p style={{ fontSize:13, color:'#424842', lineHeight:1.75 }}>{p.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+              The Confluence of<br />
+              <span style={{ fontStyle:'italic', fontWeight:400 }}>Nature and Healing</span>
+            </h1>
 
-      {/* ─── CTA Banner ─── */}
-      <section style={{ maxWidth:1100, margin:'0 auto', padding:'0 32px 80px' }}>
-        <div style={{
-          background:'linear-gradient(135deg, #102A19 0%, #1a4028 100%)',
-          borderRadius:48, padding:'clamp(40px,6vw,72px)',
-          textAlign:'center', position:'relative', overflow:'hidden',
-        }}>
-          <div style={{ position:'absolute', top:'-30%', right:'-10%', width:300, height:300, background:'rgba(212,175,55,0.08)', filter:'blur(80px)', borderRadius:'50%' }} />
-          <div style={{ position:'absolute', bottom:'-20%', left:'-5%', width:250, height:250, background:'rgba(176,206,181,0.08)', filter:'blur(80px)', borderRadius:'50%' }} />
-          <span style={{ fontFamily:'Manrope,sans-serif', fontSize:10, fontWeight:800, textTransform:'uppercase', letterSpacing:'0.3em', color:'#D4AF37', display:'block', marginBottom:16, position:'relative' }}>Explore Our Range</span>
-          <h3 style={{ fontFamily:'Newsreader,serif', fontSize:'clamp(24px,4vw,40px)', fontWeight:300, color:'#fff', marginBottom:20, position:'relative' }}>
-            Discover 160+ Authentic <span style={{ fontStyle:'italic' }}>Ayurvedic Formulations</span>
-          </h3>
-          <a href="/" style={{
-            display:'inline-flex', alignItems:'center', gap:8,
-            background:'linear-gradient(135deg, #D4AF37, #e9c349)',
-            color:'#102A19', padding:'14px 36px', borderRadius:9999,
-            fontFamily:'Manrope,sans-serif', fontSize:12, fontWeight:800,
-            textTransform:'uppercase', letterSpacing:'0.15em', textDecoration:'none',
-            boxShadow:'0 8px 24px rgba(212,175,55,0.3)',
-            position:'relative',
-          }}>
-            Shop All Products
-            <span className="material-symbols-outlined" style={{ fontSize:16 }}>arrow_forward</span>
-          </a>
-        </div>
-      </section>
-    </StoreLayout>
+            {/* Hero image — from Stitch: rounded-[4rem] shadow-2xl glass-edge */}
+            <div style={{
+              position:'relative', width:'100%', maxWidth:900, margin:'0 auto',
+              aspectRatio:'16/10', overflow:'hidden', borderRadius:64,
+              boxShadow:'0 25px 50px rgba(16,42,25,0.12)',
+              borderTop:'1.5px solid rgba(255,255,255,0.8)', borderLeft:'1.5px solid rgba(255,255,255,0.8)',
+              borderBottom:'1.5px solid rgba(255,255,255,0.4)', borderRight:'1.5px solid rgba(255,255,255,0.4)',
+            }}>
+              <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1200&q=80" alt="Ayurvedic herbs and botanicals"
+                style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+            </div>
+          </section>
+
+          {/* ── Content Glass Panel — from Stitch: bg-white/40 backdrop-blur-3xl glass-edge rounded-[4rem] p-20 ── */}
+          <section style={{ maxWidth:900, margin:'0 auto', position:'relative' }}>
+            <div className="liquid-glass" style={{
+              borderRadius:64, padding:'clamp(32px,6vw,80px)',
+              boxShadow:'0 20px 40px rgba(16,42,25,0.05), 0 0 0 1px rgba(16,42,25,0.02)',
+            }}>
+              <div style={{ maxWidth:720, margin:'0 auto' }}>
+
+                {/* Opening — from Stitch: font-headline text-3xl md:text-4xl text-primary-container leading-relaxed */}
+                <p style={{
+                  fontFamily:'Newsreader,serif', fontSize:'clamp(22px,3vw,32px)',
+                  color:'#102a19', lineHeight:1.6, marginBottom:40,
+                }}>
+                  At the heart of Shree Brahmachaitanya Ayurved lies a belief that wellness is not a destination, but a rhythmic dialogue between the Vaidya's wisdom and the healing power of nature.
+                </p>
+
+                {/* Body — from Stitch: font-body text-lg text-on-surface-variant leading-loose */}
+                <p style={{
+                  fontFamily:'Manrope,sans-serif', fontSize:17, color:'#424842',
+                  lineHeight:2, marginBottom:40,
+                }}>
+                  Founded by a group of Ayurvedic physicians, our philosophy is rooted in the ancestral wisdom of Ayurveda — the 'Science of Life.' We don't merely manufacture products; we curate authentic formulations that resonate with the body's natural healing frequencies. Each botanical is selected not just for its chemical profile, but for its energetic contribution to the whole. Our core associates are postgraduates in Rasashastra, Bhaishajya Kalpana, Dravyaguna, and Kaychikitsa — bringing depth knowledge of classical Shastrokt manufacturing.
+                </p>
+
+                {/* ── Asymmetric Glass Pillar Cards — from Stitch: grid grid-cols-2 gap-8, card 1 translate-y-12 ── */}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:32, margin:'80px 0' }} className="pillar-grid">
+                  {[
+                    { icon:'eco', color:'#D4AF37', title:'Ethical Sourcing', desc:'Our partners are stewards of the land. We trace every ingredient from sustainable harvest to final preparation, ensuring nature is honored as much as the end formulation.' },
+                    { icon:'science', color:'#D4AF37', title:'Clinical Precision', desc:'While we honor Shastrokt tradition, we utilize modern GMP-compliant processes to preserve the full bioavailability of every botanical compound in our 160+ formulations.' },
+                  ].map((card, i) => (
+                    <div key={i} style={{
+                      background:'rgba(255,255,255,0.6)', backdropFilter:'blur(16px)',
+                      borderTop:'1.5px solid rgba(255,255,255,0.8)', borderLeft:'1.5px solid rgba(255,255,255,0.8)',
+                      borderBottom:'1.5px solid rgba(255,255,255,0.4)', borderRight:'1.5px solid rgba(255,255,255,0.4)',
+                      padding:40, borderRadius:28,
+                      transform: i === 0 ? 'translateY(48px)' : 'none',
+                      boxShadow:'0 16px 32px rgba(16,42,25,0.04)',
+                    }}>
+                      <span className="material-symbols-outlined" style={{ fontSize:36, color:card.color, marginBottom:24, display:'block' }}>{card.icon}</span>
+                      <h3 style={{ fontFamily:'Newsreader,serif', fontSize:22, color:'#102a19', marginBottom:16 }}>{card.title}</h3>
+                      <p style={{ fontFamily:'Manrope,sans-serif', fontSize:14, color:'#424842', lineHeight:1.8 }}>{card.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Closing text */}
+                <p style={{
+                  fontFamily:'Manrope,sans-serif', fontSize:17, color:'#424842',
+                  lineHeight:2, paddingTop:40,
+                }}>
+                  We believe in the beauty of the slow, authentic process. In a world of synthetic shortcuts, we choose the classical extraction. We choose the hand-verified ingredient. We choose the efficacy that reveals itself over time — much like the growth of a forest, our results are deep-rooted and lasting. By the grace of Lord Dhanvantari and Shri Brahmachaitanya Gondavlekar Maharaj, we have succeeded in producing more than 160 generic and 12 research-based proprietary products.
+                </p>
+
+                {/* CTA — from Stitch: bg-primary-container text-on-primary rounded-full uppercase tracking-widest */}
+                <div style={{ borderTop:'1px solid rgba(16,42,25,0.06)', paddingTop:64, marginTop:64, textAlign:'center' }}>
+                  <Link href="/wellness" style={{
+                    display:'inline-flex', alignItems:'center', gap:12,
+                    background:'#102a19', color:'#ffffff', padding:'20px 40px',
+                    borderRadius:9999, fontFamily:'Manrope,sans-serif', fontSize:11,
+                    fontWeight:700, textTransform:'uppercase', letterSpacing:'0.15em',
+                    boxShadow:'0 12px 32px rgba(16,42,25,0.15)',
+                    transition:'all 0.5s',
+                  }}>
+                    Explore Our Formulations
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Decorative floating element — from Stitch: hidden lg:block absolute -left-24 top-1/4 */}
+            <div style={{
+              position:'absolute', left:-96, top:'25%', width:192, height:192,
+              borderRadius:'50%', border:'1px solid rgba(16,42,25,0.08)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              transform:'rotate(-12deg)',
+            }} className="hide-mobile">
+              <span style={{ fontFamily:'Newsreader,serif', fontStyle:'italic', color:'rgba(16,42,25,0.3)', fontSize:14, textAlign:'center', padding:32 }}>Formulated for the Vaidya</span>
+            </div>
+          </section>
+        </main>
+
+        {/* ═══ FOOTER — from Stitch ═══ */}
+        <footer style={{ width:'100%', display:'flex', flexDirection:'column', alignItems:'center', gap:48, padding:'96px 32px 48px', background:'#F9F9F6' }}>
+          <span style={{ fontFamily:'Newsreader,serif', fontStyle:'italic', fontSize:28, color:'#102a19' }}>SB Ayurved</span>
+          <div style={{ display:'flex', flexWrap:'wrap', justifyContent:'center', gap:48 }}>
+            {[{t:'About',h:'/about'},{t:'Products',h:'/wellness'},{t:'AyuAahar',h:'/ayuaahar'},{t:'Shipping',h:'/terms'},{t:'Privacy',h:'/privacy'}].map(l => (
+              <Link key={l.h} href={l.h} style={{ fontFamily:'Manrope,sans-serif', color:'#424842', fontSize:14, opacity:0.8, transition:'opacity 0.2s' }}>{l.t}</Link>
+            ))}
+          </div>
+          <p style={{ fontSize:12, color:'#424842', opacity:0.5 }}>© 2025 Shree Brahmachaitanya Ayurved. Rooted in Tradition.</p>
+        </footer>
+      </div>
+
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .hide-mobile { display: none !important; }
+          .pillar-grid { grid-template-columns: 1fr !important; }
+          .pillar-grid > div { transform: none !important; }
+        }
+      `}</style>
+    </>
   );
 }
