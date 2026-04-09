@@ -1,6 +1,6 @@
 // components/StoreLayout.jsx
-// ═══ Shared layout — Botanical Liquid Glass ═══
-// CONSISTENT NAV across all pages: Shop | Heritage | AyuAahar | Wellness | Journal | Contact
+// ═══ SINGLE SOURCE OF TRUTH for nav + footer + atmospheric blobs ═══
+// ALL storefront pages MUST use this — no more inline navbars
 import Head from 'next/head';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -9,13 +9,12 @@ import { useRouter } from 'next/router';
 const NAV = [
   { href:'/products', label:'Shop' },
   { href:'/about', label:'Heritage' },
-  { href:'/ayuaahar', label:'AyuAahar' },
   { href:'/wellness', label:'Wellness' },
   { href:'/blog', label:'Journal' },
   { href:'/contact', label:'Contact' },
 ];
 
-export default function StoreLayout({ children, title='SB Ayurved', description='' }) {
+export default function StoreLayout({ children, title='SB Ayurved', description='', noFooter=false }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const router = useRouter();
 
@@ -29,31 +28,33 @@ export default function StoreLayout({ children, title='SB Ayurved', description=
       </Head>
 
       <div style={{ background:'#FCFCF9', color:'#1a1c1b', minHeight:'100vh', overflow:'hidden', position:'relative' }}>
-        {/* ═══ ATMOSPHERIC BLOBS ═══ */}
-        <div className="botanical-blob" style={{ top:'-10%', left:'-10%', width:'50vw', height:'50vw', background:'rgba(203,234,208,0.3)' }} />
-        <div className="botanical-blob" style={{ bottom:'-10%', right:'-10%', width:'55vw', height:'55vw', background:'rgba(187,203,187,0.2)' }} />
-        <div className="botanical-blob" style={{ top:'35%', right:'5%', width:'35vw', height:'35vw', background:'rgba(222,228,221,0.35)' }} />
 
-        {/* ═══ GLASS NAVBAR — consistent across ALL pages ═══ */}
-        <nav style={{
+        {/* ═══ ATMOSPHERIC GREEN GRADIENT BLOBS — STRONG opacity ═══ */}
+        <div className="botanical-blob" style={{ top:'-12%', left:'-8%', width:'55vw', height:'55vw', background:'rgba(203,234,208,0.35)' }} />
+        <div className="botanical-blob" style={{ bottom:'-15%', right:'-10%', width:'60vw', height:'60vw', background:'rgba(176,206,181,0.25)' }} />
+        <div className="botanical-blob" style={{ top:'30%', right:'5%', width:'40vw', height:'40vw', background:'rgba(213,227,216,0.4)' }} />
+        {/* Gold accent blob — subtle */}
+        <div className="botanical-blob" style={{ top:'55%', left:'15%', width:'25vw', height:'25vw', background:'rgba(233,195,73,0.05)' }} />
+
+        {/* ═══ GLASS NAV — identical on EVERY page ═══ */}
+        <nav className="glass-nav" style={{
           position:'fixed', top:16, left:'50%', transform:'translateX(-50%)',
           width:'95%', maxWidth:1280, zIndex:50, borderRadius:9999,
-          background:'rgba(236,253,245,0.4)', backdropFilter:'blur(48px)', WebkitBackdropFilter:'blur(48px)',
-          borderTop:'1px solid rgba(255,255,255,0.8)', borderLeft:'1px solid rgba(255,255,255,0.8)',
-          borderBottom:'1px solid rgba(255,255,255,0.2)', borderRight:'1px solid rgba(255,255,255,0.2)',
-          boxShadow:'0 40px 80px -10px rgba(16,42,25,0.08)',
           display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 32px',
         }}>
           <div style={{ display:'flex', alignItems:'center', gap:32 }}>
-            <Link href="/"><span style={{ fontFamily:'Newsreader,serif', fontSize:24, fontWeight:700, color:'#735c00' }}>SB Ayurved</span></Link>
+            <Link href="/">
+              <span style={{ fontFamily:'Newsreader,serif', fontSize:24, fontWeight:700, color:'#735c00' }}>SB Ayurved</span>
+            </Link>
             <div style={{ display:'flex', alignItems:'center', gap:24 }} className="hide-mobile">
               {NAV.map(n => {
-                const isActive = router.pathname === n.href || (n.href === '/products' && router.pathname === '/');
+                const active = router.pathname === n.href || (n.href === '/products' && router.pathname === '/');
                 return (
                   <Link key={n.href} href={n.href} style={{
                     fontFamily:'Newsreader,serif', fontSize:14, letterSpacing:'-0.01em',
-                    color: isActive ? '#735c00' : 'rgba(16,42,25,0.65)',
-                    borderBottom: isActive ? '1px solid #735c00' : 'none',
+                    color: active ? '#735c00' : 'rgba(16,42,25,0.6)',
+                    borderBottom: active ? '1px solid #735c00' : 'none',
+                    paddingBottom: active ? 2 : 0,
                     transition:'color 0.3s',
                   }}>{n.label}</Link>
                 );
@@ -61,75 +62,87 @@ export default function StoreLayout({ children, title='SB Ayurved', description=
             </div>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:20 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(255,255,255,0.2)', padding:'6px 16px', borderRadius:9999, border:'1px solid rgba(255,255,255,0.4)' }} className="hide-mobile">
-              <span className="material-symbols-outlined" style={{ fontSize:16, color:'rgba(16,42,25,0.4)' }}>search</span>
+            {/* Search pill */}
+            <div className="hide-mobile" style={{
+              display:'flex', alignItems:'center', gap:6,
+              background:'rgba(255,255,255,0.25)', padding:'6px 16px',
+              borderRadius:9999, border:'1px solid rgba(255,255,255,0.4)',
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize:16, color:'rgba(16,42,25,0.35)' }}>search</span>
               <input placeholder="Search..." style={{ background:'transparent', border:'none', outline:'none', fontSize:13, width:100, color:'#1a1c1b' }} />
             </div>
-            <Link href="/checkout" style={{ color:'#102a19', display:'flex' }}><span className="material-symbols-outlined">shopping_cart</span></Link>
-            <Link href="/admin" style={{ color:'#102a19', display:'flex' }}><span className="material-symbols-outlined">person</span></Link>
-            <button onClick={() => setMobileOpen(!mobileOpen)} style={{ display:'none', background:'none', border:'none', color:'#102a19', cursor:'pointer' }} className="show-mobile-only">
+            <Link href="/checkout" style={{ color:'#102a19', display:'flex' }}>
+              <span className="material-symbols-outlined">shopping_cart</span>
+            </Link>
+            <Link href="/admin" style={{ color:'#102a19', display:'flex' }}>
+              <span className="material-symbols-outlined">person</span>
+            </Link>
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="show-mobile-only" style={{ background:'none', border:'none', color:'#102a19', cursor:'pointer' }}>
               <span className="material-symbols-outlined">{mobileOpen ? 'close' : 'menu'}</span>
             </button>
           </div>
         </nav>
 
+        {/* Mobile dropdown */}
         {mobileOpen && (
-          <div style={{ position:'fixed', top:80, left:'50%', transform:'translateX(-50%)', width:'90%', maxWidth:400, zIndex:49, background:'rgba(249,249,246,0.95)', backdropFilter:'blur(32px)', borderRadius:24, padding:'16px 20px', boxShadow:'0 20px 40px rgba(16,42,25,0.1)', borderTop:'1.5px solid rgba(255,255,255,0.8)' }}>
+          <div className="liquid-glass" style={{
+            position:'fixed', top:80, left:'50%', transform:'translateX(-50%)',
+            width:'90%', maxWidth:400, zIndex:49, borderRadius:24, padding:'16px 20px',
+          }}>
             {NAV.map(n => (
-              <Link key={n.href} href={n.href} onClick={() => setMobileOpen(false)} style={{ display:'block', fontFamily:'Newsreader,serif', fontSize:16, color:'#102a19', padding:'12px 16px', borderRadius:12 }}>{n.label}</Link>
+              <Link key={n.href} href={n.href} onClick={() => setMobileOpen(false)} style={{
+                display:'block', fontFamily:'Newsreader,serif', fontSize:16, color:'#102a19',
+                padding:'12px 16px', borderRadius:12,
+              }}>{n.label}</Link>
             ))}
           </div>
         )}
 
-        <main style={{ position:'relative', zIndex:1, paddingTop:128 }}>{children}</main>
+        {/* ═══ MAIN ═══ */}
+        <main style={{ position:'relative', zIndex:1, paddingTop:128 }}>
+          {children}
+        </main>
 
-        {/* ═══ FOOTER — from Stitch with newsletter ═══ */}
-        <footer style={{ width:'100%', paddingTop:80, paddingBottom:40, background:'#FCFCF9', position:'relative', zIndex:1 }}>
-          <div style={{ position:'absolute', bottom:0, left:0, right:0, height:384, background:'linear-gradient(to top, rgba(213,227,216,0.2), transparent)', zIndex:0 }} />
-          <div style={{ maxWidth:1280, margin:'0 auto', padding:'0 32px', position:'relative', zIndex:1 }}>
-            <div style={{ display:'flex', flexWrap:'wrap', justifyContent:'space-between', alignItems:'flex-start', gap:40, marginBottom:48 }}>
-              <div style={{ maxWidth:320 }}>
-                <span style={{ fontFamily:'Newsreader,serif', fontStyle:'italic', fontSize:28, color:'#102a19', display:'block', marginBottom:12 }}>SB Ayurved</span>
-                <p style={{ fontSize:13, color:'rgba(16,42,25,0.5)', lineHeight:1.7 }}>Crafting authentic Ayurvedic formulations through the intersection of classical Vaidya wisdom and modern manufacturing.</p>
-                <div style={{ display:'flex', gap:32, marginTop:20 }}>
-                  {[{t:'About',h:'/about'},{t:'Shipping',h:'/terms'},{t:'Privacy',h:'/privacy'},{t:'Terms',h:'/terms'}].map(l => (
-                    <Link key={l.t} href={l.h} style={{ fontSize:13, color:'rgba(16,42,25,0.5)', transition:'color 0.2s' }}>{l.t}</Link>
-                  ))}
+        {/* ═══ FOOTER ═══ */}
+        {!noFooter && (
+          <footer style={{ width:'100%', paddingTop:80, paddingBottom:40, background:'#FCFCF9', position:'relative', zIndex:1 }}>
+            <div style={{ position:'absolute', bottom:0, left:0, right:0, height:400, background:'linear-gradient(to top, rgba(213,227,216,0.2), transparent)', zIndex:0 }} />
+            <div style={{ maxWidth:1280, margin:'0 auto', padding:'0 32px', position:'relative', zIndex:1 }}>
+              <div style={{ display:'flex', flexWrap:'wrap', justifyContent:'space-between', alignItems:'flex-start', gap:40, marginBottom:48 }}>
+                <div style={{ maxWidth:320 }}>
+                  <span style={{ fontFamily:'Newsreader,serif', fontStyle:'italic', fontSize:28, color:'#102a19', display:'block', marginBottom:12 }}>SB Ayurved</span>
+                  <p style={{ fontSize:13, color:'rgba(16,42,25,0.5)', lineHeight:1.7 }}>Crafting authentic Ayurvedic formulations through the intersection of classical Vaidya wisdom and modern GMP manufacturing.</p>
+                  <div style={{ display:'flex', gap:32, marginTop:20 }}>
+                    {[{t:'About',h:'/about'},{t:'Shipping',h:'/terms'},{t:'Privacy',h:'/privacy'},{t:'Terms',h:'/terms'}].map(l => (
+                      <Link key={l.t} href={l.h} style={{ fontSize:13, color:'rgba(16,42,25,0.45)', transition:'color 0.2s' }}>{l.t}</Link>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span style={{ fontFamily:'Manrope,sans-serif', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.3em', color:'#735c00', display:'block', marginBottom:8 }}>Newsletter</span>
+                  <div style={{ display:'flex', borderBottom:'1px solid rgba(16,42,25,0.1)', paddingBottom:8 }}>
+                    <input placeholder="Your Email Address" style={{ background:'transparent', border:'none', outline:'none', fontFamily:'Newsreader,serif', fontStyle:'italic', fontSize:16, width:240, color:'#102a19' }} />
+                    <span className="material-symbols-outlined" style={{ color:'#102a19', cursor:'pointer' }}>arrow_forward</span>
+                  </div>
                 </div>
               </div>
-              <div>
-                <span style={{ fontFamily:'Manrope,sans-serif', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.3em', color:'#735c00', display:'block', marginBottom:8 }}>Newsletter</span>
-                <div style={{ display:'flex', borderBottom:'1px solid rgba(16,42,25,0.1)', paddingBottom:8 }}>
-                  <input placeholder="Your Email Address" style={{ background:'transparent', border:'none', outline:'none', fontFamily:'Newsreader,serif', fontStyle:'italic', fontSize:16, width:240, color:'#102a19' }} />
-                  <span className="material-symbols-outlined" style={{ color:'#102a19', cursor:'pointer' }}>arrow_forward</span>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:'rgba(16,42,25,0.3)', borderTop:'1px solid rgba(16,42,25,0.06)', paddingTop:20 }}>
+                <span>© 2025 Shree Brahmachaitanya Ayurved. All rights reserved.</span>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize:14 }}>eco</span>
+                  <span>Rooted in Tradition</span>
                 </div>
               </div>
+              <div style={{ marginTop:20, height:3, background:'linear-gradient(to right, rgba(213,227,216,0.4), rgba(204,168,48,0.3), rgba(16,42,25,0.15))', borderRadius:2, opacity:0.5 }} />
             </div>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:10, letterSpacing:'0.15em', textTransform:'uppercase', color:'rgba(16,42,25,0.35)', borderTop:'1px solid rgba(16,42,25,0.06)', paddingTop:20 }}>
-              <span>© 2025 Shree Brahmachaitanya Ayurved. All rights reserved.</span>
-              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <span className="material-symbols-outlined" style={{ fontSize:14 }}>eco</span>
-                <span>Rooted in Tradition</span>
-              </div>
-            </div>
-            {/* Bottom gradient bar — from Stitch product_catalog footer */}
-            <div style={{ marginTop:20, height:3, background:'linear-gradient(to right, rgba(213,227,216,0.4), rgba(204,168,48,0.3), rgba(16,42,25,0.2))', borderRadius:2, opacity:0.5 }} />
-          </div>
-        </footer>
+          </footer>
+        )}
       </div>
-
-      <style jsx global>{`
-        @media (max-width: 768px) {
-          .hide-mobile { display: none !important; }
-          .show-mobile-only { display: flex !important; }
-        }
-        @media (min-width: 769px) {
-          .show-mobile-only { display: none !important; }
-        }
-      `}</style>
     </>
   );
 }
+
+// ═══ REUSABLE COMPONENTS ═══
 
 export function PageHero({ title, breadcrumb, subtitle }) {
   return (

@@ -4,24 +4,15 @@
   --background: #FCFCF9;
   --surface: #f9f9f6;
   --surface-low: #f4f4f1;
-  --surface-container: #eeeeeb;
-  --primary: #001406;
   --primary-container: #102a19;
   --on-primary: #ffffff;
-  --on-primary-container: #76937c;
-  --primary-fixed: #cbead0;
-  --primary-fixed-dim: #b0ceb5;
-  --secondary: #546159;
   --secondary-container: #d5e3d8;
   --on-surface: #1a1c1b;
   --on-surface-variant: #424842;
-  --outline: #737972;
   --outline-variant: #c2c8c0;
   --tertiary: #735c00;
   --tertiary-container: #cca830;
-  --tertiary-fixed-dim: #e9c349;
   --gold: #D4AF37;
-  --error: #ba1a1a;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -46,27 +37,82 @@ input, select, textarea { font-family: 'Manrope', sans-serif; }
   vertical-align: middle;
 }
 
-/* Liquid Glass — the signature component */
+/* ═══ LIQUID GLASS — THE SIGNATURE COMPONENT ═══
+   From Stitch DESIGN.md:
+   - Fill: white at 40% opacity with green cast
+   - Effect: backdrop-blur-3xl
+   - Directional Light Border: top/left white/80, bottom/right white/40
+   - Shadow: blur 40-80px, spread -10px, color rgba(16,42,25,0.08) (forest-green tint)
+*/
 .liquid-glass {
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.8);
-  border-left: 1.5px solid rgba(255, 255, 255, 0.8);
-  border-bottom: 1.5px solid rgba(255, 255, 255, 0.2);
-  border-right: 1.5px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-left: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.3);
+  border-right: 1.5px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 40px rgba(16, 42, 25, 0.06);
 }
 
+/* Glass Card — stronger green tint variant, used for product cards and panels */
 .glass-card {
   background: rgba(213, 227, 216, 0.4);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
-  border-top: 1px solid rgba(255, 255, 255, 0.8);
-  border-left: 1px solid rgba(255, 255, 255, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-left: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-right: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 20px 40px -5px rgba(16, 42, 25, 0.08);
 }
 
+/* Product card — extra prominent shadow matching Stitch product_catalog cards */
+.product-glass-card {
+  background: rgba(213, 227, 216, 0.32);
+  backdrop-filter: blur(48px);
+  -webkit-backdrop-filter: blur(48px);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-left: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-right: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 8px 16px rgba(16, 42, 25, 0.04),
+    0 30px 60px -10px rgba(16, 42, 25, 0.08);
+  transition: transform 0.5s ease, box-shadow 0.5s ease;
+}
+.product-glass-card:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 12px 24px rgba(16, 42, 25, 0.06),
+    0 40px 80px -10px rgba(16, 42, 25, 0.12);
+}
+
+/* Nav glass pill — from Stitch: bg-emerald-50/40 backdrop-blur-3xl */
+.glass-nav {
+  background: rgba(236, 253, 245, 0.42);
+  backdrop-filter: blur(48px);
+  -webkit-backdrop-filter: blur(48px);
+  border-top: 1px solid rgba(255, 255, 255, 0.85);
+  border-left: 1px solid rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 40px 80px -10px rgba(16, 42, 25, 0.08);
+}
+
+/* Sidebar filter glass — from Stitch: bg-secondary-container/40 backdrop-blur-3xl */
+.glass-sidebar {
+  background: rgba(213, 227, 216, 0.42);
+  backdrop-filter: blur(48px);
+  -webkit-backdrop-filter: blur(48px);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-left: 1.5px solid rgba(255, 255, 255, 0.85);
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-right: 1.5px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 20px 40px rgba(16, 42, 25, 0.06);
+}
+
+/* Atmospheric background blobs — STRONGER than before */
 .botanical-blob {
   filter: blur(120px);
   border-radius: 50%;
@@ -75,12 +121,15 @@ input, select, textarea { font-family: 'Manrope', sans-serif; }
   z-index: -1;
 }
 
-::selection { background: rgba(203, 234, 208, 0.4); color: #102a19; }
+/* Selection */
+::selection { background: rgba(203, 234, 208, 0.5); color: #102a19; }
+
+/* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #c2c8c0; border-radius: 2px; }
 
-/* Admin-only dark theme utilities (used only in /admin/* inline) */
+/* ═══ Admin dark theme utilities ═══ */
 .stitch-glass {
   background: rgba(42,56,49,0.60);
   backdrop-filter: blur(24px);
@@ -89,3 +138,12 @@ input, select, textarea { font-family: 'Manrope', sans-serif; }
 }
 .stitch-gold { background: linear-gradient(135deg, #e9c349, #ad8b0e); }
 .stitch-row:hover { background: rgba(255,255,255,0.03); }
+
+/* ═══ Responsive helpers ═══ */
+@media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+  .show-mobile-only { display: flex !important; }
+}
+@media (min-width: 769px) {
+  .show-mobile-only { display: none !important; }
+}
