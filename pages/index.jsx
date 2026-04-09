@@ -52,10 +52,11 @@ const liquidGlass = {
 };
 
 const NAV = [
-  { href: '/',          label: 'Shop',     active: true },
-  { href: '/about',     label: 'Heritage', active: false },
-  { href: '/ayuaahar',  label: 'AyuAahar', active: false },
-  { href: '/blog',      label: 'Journal',  active: false },
+  { href: '/products', label: 'Shop',     active: true },
+  { href: '/about',    label: 'Heritage', active: false },
+  { href: '/wellness', label: 'Wellness', active: false },
+  { href: '/blog',     label: 'Journal',  active: false },
+  { href: '/contact',  label: 'Contact',  active: false },
 ];
 
 const CATEGORIES = [

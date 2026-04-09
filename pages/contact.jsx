@@ -41,8 +41,8 @@ export default function ContactPage() {
         }}>
           <Link href="/"><span style={{ fontSize:22, fontFamily:'Newsreader,serif', fontStyle:'italic', color:'#102a19' }}>SB Ayurved</span></Link>
           <div style={{ display:'flex', gap:40 }} className="hide-mobile">
-            {['Shop','About','AyuAahar','Contact'].map((l,i) => (
-              <Link key={l} href={['/','/about','/ayuaahar','/contact'][i]} style={{
+            {['Shop','Heritage','Wellness','Journal','Contact'].map((l,i) => (
+              <Link key={l} href={['/products','/about','/wellness','/blog','/contact'][i]} style={{
                 fontFamily:'Manrope,sans-serif', fontSize:11, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.15em',
                 color: l==='Contact' ? '#102a19' : '#424842',
                 borderBottom: l==='Contact' ? '2px solid rgba(16,42,25,0.2)' : 'none', paddingBottom:4,

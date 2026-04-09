@@ -33,6 +33,7 @@ const NAV_ITEMS = [
   { id: 'orders',    label: 'Orders',     icon: '📋' },
   { id: 'products',  label: 'Products',   icon: '🛍️' },
   { id: 'pages',     label: 'Pages',      icon: '📄' },
+  { id: 'promos',    label: 'Promotions', icon: '🏷️' },
   { id: 'setup',     label: 'DB Setup',   icon: '🔧' },
 ];
 
@@ -154,6 +155,7 @@ export default function AdminDashboard() {
             {tab === 'orders'    && <OrdersPanel />}
             {tab === 'products'  && <ProductsPanel />}
             {tab === 'pages'     && <PagesPanel />}
+            {tab === 'promos'    && <PromotionsPanel />}
             {tab === 'setup'     && <SetupPanel />}
           </div>
         </main>
@@ -1320,6 +1322,119 @@ Horizontal divider"
       <style jsx global>{`
         .stitch-gold { background: linear-gradient(135deg, #e9c349 0%, #ad8b0e 100%); }
       `}</style>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Promotions Panel — from Stitch promotions_dashboard
+// Global banners, discount toggles, campaign management
+// ─────────────────────────────────────────────────────────────────────────────
+function PromotionsPanel() {
+  const [promos, setPromos] = useState([
+    { id:1, name:'Summer Wellness Sale', type:'percentage', value:15, category:'All', active:true, banner:'Upto 15% off on all DhatuPachak formulations!' },
+    { id:2, name:'AyuAahar Launch Offer', type:'flat', value:50, category:'AyuAahar', active:false, banner:'₹50 off on all AyuAahar products' },
+    { id:3, name:'Festival Kit Combo', type:'percentage', value:20, category:'Festival Kits', active:false, banner:'20% off Festival Kits — limited time!' },
+  ]);
+
+  function togglePromo(id) {
+    setPromos(ps => ps.map(p => p.id === id ? { ...p, active: !p.active } : p));
+  }
+
+  return (
+    <div>
+      <header style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:40 }}>
+        <div>
+          <h2 style={{ fontFamily:'Noto Serif,serif', fontSize:38, fontWeight:300, letterSpacing:'-0.5px', color:'#d7e6dc', marginBottom:6 }}>Promotions</h2>
+          <p style={{ color:'#c1c8c1', fontSize:14, opacity:0.8 }}>Manage global sales banners and discount campaigns</p>
+        </div>
+        <button className="stitch-gold" style={{
+          color:'#3c2f00', padding:'12px 28px', borderRadius:999, border:'none',
+          fontFamily:'Manrope,sans-serif', fontSize:12, fontWeight:800,
+          textTransform:'uppercase', letterSpacing:'0.14em', cursor:'pointer',
+          display:'flex', alignItems:'center', gap:8,
+          boxShadow:'0 8px 24px rgba(233,195,73,0.2)',
+        }}>
+          <span>+</span> New Campaign
+        </button>
+      </header>
+
+      {/* Active Banner Preview */}
+      {promos.filter(p => p.active).length > 0 && (
+        <div className="stitch-glass" style={{
+          borderRadius:14, padding:'20px 28px', marginBottom:24,
+          borderLeft:'4px solid #e9c349', display:'flex', alignItems:'center', gap:16,
+          boxShadow:'0 8px 32px rgba(5,17,11,0.3)',
+        }}>
+          <span style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.12em', color:'#e9c349', flexShrink:0 }}>LIVE BANNER</span>
+          <span style={{ fontSize:14, color:'#d7e6dc', fontStyle:'italic', fontFamily:'Noto Serif,serif' }}>
+            {promos.find(p => p.active)?.banner}
+          </span>
+        </div>
+      )}
+
+      {/* Promotions List */}
+      <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+        {promos.map(p => (
+          <div key={p.id} className="stitch-glass" style={{
+            borderRadius:14, padding:'24px 28px',
+            boxShadow:'0 8px 32px rgba(5,17,11,0.3)',
+            opacity: p.active ? 1 : 0.6,
+            display:'flex', alignItems:'center', gap:20,
+            transition:'all 0.2s',
+          }}>
+            {/* Toggle — large switch */}
+            <button onClick={() => togglePromo(p.id)} style={{
+              width:56, height:28, borderRadius:14, border:'none', cursor:'pointer',
+              background: p.active ? 'linear-gradient(135deg, #e9c349, #ad8b0e)' : 'rgba(65,72,67,0.4)',
+              position:'relative', transition:'background 0.3s', flexShrink:0,
+            }}>
+              <div style={{
+                width:22, height:22, borderRadius:11,
+                background: p.active ? '#3c2f00' : '#8b938c',
+                position:'absolute', top:3,
+                left: p.active ? 31 : 3,
+                transition:'left 0.3s, background 0.3s',
+              }} />
+            </button>
+
+            {/* Info */}
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:4 }}>
+                <span style={{ fontSize:15, fontWeight:600, color:'#d7e6dc' }}>{p.name}</span>
+                <span style={{
+                  padding:'3px 10px', borderRadius:999, fontSize:9, fontWeight:700,
+                  textTransform:'uppercase', letterSpacing:'0.08em',
+                  background: p.active ? 'rgba(158,209,189,0.08)' : 'rgba(193,200,193,0.08)',
+                  color: p.active ? '#9ed1bd' : '#8b938c',
+                  border: `1px solid ${p.active ? 'rgba(158,209,189,0.25)' : 'rgba(193,200,193,0.15)'}`,
+                }}>{p.active ? 'Active' : 'Paused'}</span>
+              </div>
+              <span style={{ fontSize:12, color:'#8b938c' }}>
+                {p.type === 'percentage' ? `${p.value}% off` : `₹${p.value} off`} · {p.category} · "{p.banner}"
+              </span>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+              <button style={{
+                display:'inline-flex', alignItems:'center', gap:5, padding:'6px 14px', borderRadius:999,
+                border:'1px solid rgba(158,209,189,0.3)', background:'rgba(158,209,189,0.08)',
+                color:'#9ed1bd', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em',
+                cursor:'pointer', fontFamily:'Manrope,sans-serif',
+              }}>
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" width="11" height="11"><path d="M9.5 2.5l2 2-7 7H2.5v-2l7-7z"/></svg>
+                Edit
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tip */}
+      <div style={{ marginTop:32, padding:'16px 24px', borderRadius:12, background:'rgba(233,195,73,0.05)', border:'1px solid rgba(233,195,73,0.1)', fontSize:13, color:'#c1c8c1', fontStyle:'italic' }}>
+        💡 Active promotions display a banner on the storefront. Only one banner is shown at a time — the first active campaign takes priority.
+      </div>
     </div>
   );
 }
